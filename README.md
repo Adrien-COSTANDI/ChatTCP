@@ -22,7 +22,9 @@ A user will write messages and press `return` to send the message.\
 If a message starts with `/` *(slash)*, it will be interpreted like a command.
 
 Here is the list of commands a user can use :
-- `/connect user` send a request to `user` to start a private conversation
-- `/accept user` accept the request from `user` that asked for a private conversation
-- `/deny user` denies the request from `user` that asked for a private conversation
+- `/connect user` (alias `/c user`) send a request to `user` to start a private conversation
+- `/accept user` (alias `/a user`)accept the request from `user` that asked for a private conversation
+- `/deny user` (alias `/d user`) denies the request from `user` that asked for a private conversation
 - `/requests (sent/received)` shows every pending request for private conversations the user has sent or received
+- `/help` (alias `/h`) shows help for every command
+
