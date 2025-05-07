@@ -1,5 +1,8 @@
 package fr.uge.net.adrien.client;
 
+import static fr.uge.net.adrien.client.commands.Command.COMMAND_PREFIX;
+
+import fr.uge.net.adrien.client.commands.Command;
 import java.util.logging.Logger;
 
 
@@ -31,12 +34,21 @@ public class Client {
   }
 
   /**
-   * Processes the command from the BlockingQueue
+   * Processes the message from the BlockingQueue
    */
   private void processCommands() throws InterruptedException {
     while (!consoleBlockingQueue.isEmpty()) {
-      var command = consoleBlockingQueue.take();
-      System.out.println("received: " + command);
+      var message = consoleBlockingQueue.take();
+
+      if (message.charAt(0) == COMMAND_PREFIX) {
+        try {
+          Command.parse(message).execute();
+        } catch (IllegalArgumentException e) {
+          System.err.println(e.getMessage());
+        }
+      } else {
+        System.out.println("received: " + message);
+      }
     }
   }
 
