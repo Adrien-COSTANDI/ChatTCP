@@ -1,6 +1,7 @@
 # ChatVaBien
 
 This project aims to implement a "home-made" chat protocol.\
+Find the RFC (redacted in French) in PDF format [here](./RFC%20ChatVaBien.pdf).\
 It will be implemented using Java 24 for both the client and the server.
 
 ## Architecture of the server
