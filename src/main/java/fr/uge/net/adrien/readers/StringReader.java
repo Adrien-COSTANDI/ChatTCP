@@ -9,7 +9,7 @@ public class StringReader implements Reader<String> {
   public static final int MAX_SIZE = 1024;
   private static final Charset UTF8 = StandardCharsets.UTF_8;
   private final ByteBuffer internalBuffer = ByteBuffer.allocate(MAX_SIZE); // write mode
-  private final IntReader intReader = new IntReader();
+  private final ShortReader intReader = new ShortReader();
   private String value;
   private State state = State.WAITING;
   private int size = -1;

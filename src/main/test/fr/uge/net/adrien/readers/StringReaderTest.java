@@ -27,7 +27,7 @@ public class StringReaderTest {
     var string = "\u20ACa\u20AC";
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
-    buffer.putInt(bytes.remaining()).put(bytes);
+    buffer.putShort((short) bytes.remaining()).put(bytes);
     StringReader sr = new StringReader();
     assertEquals(Reader.ProcessStatus.DONE, sr.process(buffer));
     assertEquals(string, sr.get());
@@ -42,11 +42,14 @@ public class StringReaderTest {
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
     var bytes2 = StandardCharsets.UTF_8.encode(string2);
-    buffer.putInt(bytes.remaining()).put(bytes).putInt(bytes2.remaining()).put(bytes2);
+    buffer.putShort((short) bytes.remaining())
+        .put(bytes)
+        .putShort((short) bytes2.remaining())
+        .put(bytes2);
     StringReader sr = new StringReader();
     assertEquals(Reader.ProcessStatus.DONE, sr.process(buffer));
     assertEquals(string, sr.get());
-    assertEquals(15, buffer.position());
+    assertEquals(13, buffer.position());
     assertEquals(buffer.capacity(), buffer.limit());
     sr.reset();
     assertEquals(Reader.ProcessStatus.DONE, sr.process(buffer));
@@ -60,7 +63,7 @@ public class StringReaderTest {
     var string = "\u20ACa\u20AC";
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
-    buffer.putInt(bytes.remaining()).put(bytes).flip();
+    buffer.putShort((short) bytes.remaining()).put(bytes).flip();
     var bufferSmall = ByteBuffer.allocate(2);
     var sr = new StringReader();
     while (buffer.hasRemaining()) {
@@ -89,7 +92,7 @@ public class StringReaderTest {
     var sr = new StringReader();
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode("aaaaa");
-    buffer.putInt(-1).put(bytes);
+    buffer.putShort((short) -1).put(bytes);
     assertEquals(Reader.ProcessStatus.ERROR, sr.process(buffer));
   }
 
@@ -98,7 +101,7 @@ public class StringReaderTest {
     var sr = new StringReader();
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode("aaaaa");
-    buffer.putInt(1025).put(bytes);
+    buffer.putShort((short) 1025).put(bytes);
     assertEquals(Reader.ProcessStatus.ERROR, sr.process(buffer));
   }
 }
