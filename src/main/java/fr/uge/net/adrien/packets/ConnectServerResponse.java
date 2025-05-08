@@ -17,7 +17,7 @@ public record ConnectServerResponse(StatusCode code) implements Packet {
       this.value = (byte) value;
     }
 
-    static Optional<StatusCode> fromValue(byte value) {
+    public static Optional<StatusCode> fromValue(byte value) {
       for (var code : StatusCode.values()) {
         if (code.value == value) {
           return Optional.of(code);
