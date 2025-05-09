@@ -46,7 +46,7 @@ DmResponse, DmConnect, DmText, DmFileHeader, DmFile*/ {
       this.value = (byte) b;
     }
 
-    static final int BYTES = Byte.BYTES;
+    public static final int BYTES = Byte.BYTES;
 
     public static Optional<Opcode> fromValue(Byte aByte) {
       for (var opcode : Opcode.values()) {
