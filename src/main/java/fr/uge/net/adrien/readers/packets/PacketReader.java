@@ -37,7 +37,7 @@ public class PacketReader implements Reader<Packet> {
 
           payloadReader = switch (opcode) {
             case CONNECT_NO_AUTH -> new ConnectNoAuthReader();
-            case CONNECT_AUTH -> throw new UnsupportedOperationException("NOT IMPLEMENTED YET");
+            case CONNECT_AUTH -> new ConnectAuthReader();
             case CONNECT_SERVER_RESPONSE -> new ConnectServerResponseReader();
           };
         }
