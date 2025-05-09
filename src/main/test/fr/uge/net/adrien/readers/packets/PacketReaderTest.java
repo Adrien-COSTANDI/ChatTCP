@@ -79,9 +79,7 @@ class PacketReaderTest {
   @Test
   public void errorGet() {
     var reader = new PacketReader();
-    assertThrows(IllegalStateException.class, () -> {
-      var res = reader.get();
-    });
+    assertThrows(IllegalStateException.class, reader::get);
   }
 
   @ParameterizedTest

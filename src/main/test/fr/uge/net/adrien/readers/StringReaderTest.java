@@ -24,7 +24,7 @@ public class StringReaderTest {
 
   @Test
   public void simple() {
-    var string = "\u20ACa\u20AC";
+    var string = "€a€";
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
     buffer.putShort((short) bytes.remaining()).put(bytes);
@@ -37,8 +37,8 @@ public class StringReaderTest {
 
   @Test
   public void reset() {
-    var string = "\u20ACa\u20AC";
-    var string2 = "\u20ACa\u20ACabcd";
+    var string = "€a€";
+    var string2 = "€a€abcd";
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
     var bytes2 = StandardCharsets.UTF_8.encode(string2);
@@ -60,7 +60,7 @@ public class StringReaderTest {
 
   @Test
   public void smallBuffer() {
-    var string = "\u20ACa\u20AC";
+    var string = "€a€";
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
     buffer.putShort((short) bytes.remaining()).put(bytes).flip();
@@ -82,9 +82,7 @@ public class StringReaderTest {
   @Test
   public void errorGet() {
     var sr = new StringReader();
-    assertThrows(IllegalStateException.class, () -> {
-      var res = sr.get();
-    });
+    assertThrows(IllegalStateException.class, sr::get);
   }
 
   @Test

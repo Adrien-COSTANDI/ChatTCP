@@ -54,9 +54,7 @@ class Context {
   private void processReceivedPacket(Packet packet) {
     System.out.println("received " + packet);
     switch (packet) {
-      case ConnectNoAuth connectNoAuth -> {
-      }
-      case ConnectAuth connectAuth -> {
+      case ConnectNoAuth _, ConnectAuth _ -> {
       }
       case ConnectServerResponse connectServerResponse -> {
         switch (connectServerResponse.code()) {
@@ -141,7 +139,7 @@ class Context {
    * The convention is that both buffers are in write-mode before the call to
    * doRead and after the call
    *
-   * @throws IOException
+   * @throws IOException if an IOException occurs
    */
   void doRead() throws IOException {
     if (sc.read(bufferIn) == -1) {

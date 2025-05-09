@@ -68,9 +68,8 @@ class Context {
     switch (packet) {
       case ConnectNoAuth connectNoAuth -> {
         switch (server.connect(connectNoAuth.pseudo(), Optional.empty())) {
-          case INVALID_USER_OR_PASSWORD -> {
-            throw new AssertionError("Should not happen in NoAuth mode");
-          }
+          case INVALID_USER_OR_PASSWORD ->
+              throw new AssertionError("Should not happen in NoAuth mode");
           case USERNAME_EXISTS -> {
             System.out.println(
                 "Failed to connect user: " + connectNoAuth.pseudo() + " already exists");
@@ -100,7 +99,7 @@ class Context {
           }
         }
       }
-      case ConnectServerResponse connectServerResponse -> {
+      case ConnectServerResponse _ -> {
       }
     }
   }
@@ -167,7 +166,7 @@ class Context {
    * The convention is that both buffers are in write-mode before the call to
    * doRead and after the call
    *
-   * @throws IOException
+   * @throws IOException if an IOException occurs
    */
   public void doRead() throws IOException {
     if (sc.read(bufferIn) == -1) {
@@ -183,7 +182,7 @@ class Context {
    * The convention is that both buffers are in write-mode before the call to
    * doWrite and after the call
    *
-   * @throws IOException
+   * @throws IOException if an IOException occurs
    */
   public void doWrite() throws IOException {
     bufferOut.flip();
