@@ -1,15 +1,16 @@
 package fr.uge.net.adrien.client;
 
-import static fr.uge.net.adrien.client.commands.Command.COMMAND_PREFIX;
-
 import fr.uge.net.adrien.client.commands.Command;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
+
+import static fr.uge.net.adrien.client.commands.Command.COMMAND_PREFIX;
 
 
 public class Client {
@@ -21,6 +22,7 @@ public class Client {
   private final SocketChannel sc;
   private final InetSocketAddress serverAddress;
   private final Selector selector;
+  private Context uniqueContext;
 
   public Client(InetSocketAddress serverAddress) throws IOException {
     this.serverAddress = serverAddress;
@@ -35,11 +37,13 @@ public class Client {
    */
   public void start() throws IOException {
     sc.configureBlocking(false);
-    sc.register(selector, SelectionKey.OP_CONNECT);
-
+    var key = sc.register(selector, SelectionKey.OP_CONNECT);
+    uniqueContext = new Context(key, this);
     sc.connect(serverAddress);
 
     console.start();
+
+    logger.info("Client started");
 
     while (!Thread.interrupted()) {
       try {
@@ -47,18 +51,34 @@ public class Client {
         processCommands();
       } catch (InterruptedException e) {
         logger.warning("Console thread is dead");
+      } catch (ClosedSelectorException e) {
+        logger.warning("Selector is closed");
       }
     }
+  }
+
+  public void shutdown() {
+    logger.info("Shutting down client");
+    console.interrupt();
+    try {
+      sc.close();
+      selector.close();
+    } catch (IOException e) {
+      // ignore exception
+    }
+    Thread.currentThread().interrupt();
   }
 
   private void treatKey(SelectionKey key) {
     try {
       if (key.isValid() && key.isConnectable()) {
-        if (!sc.finishConnect()) {
-          return; // the selector gave a bad hint
-        }
-        key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-        System.out.println("my adress : " + sc.getLocalAddress());
+        uniqueContext.doConnect();
+      }
+      if (key.isValid() && key.isWritable()) {
+        uniqueContext.doWrite();
+      }
+      if (key.isValid() && key.isReadable()) {
+        uniqueContext.doRead();
       }
     } catch (IOException ioe) {
       // lambda call in select requires to tunnel IOException
@@ -84,7 +104,6 @@ public class Client {
       }
     }
   }
-
 
   public static void main(String[] args) throws IOException {
     new Client(new InetSocketAddress("localhost", 9999)).start();

@@ -1,4 +1,4 @@
-package fr.uge.net.adrien.server;
+package fr.uge.net.adrien.client;
 
 import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
@@ -11,34 +11,24 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
-import java.util.Objects;
-
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
 
 class Context {
 
-  private final ByteBuffer bufferIn = ByteBuffer.allocate(Server.BUFFER_SIZE);
-  private final ByteBuffer bufferOut = ByteBuffer.allocate(Server.BUFFER_SIZE);
-  private final PacketReader packetReader = new PacketReader();
-  private final ArrayDeque<Packet> queue = new ArrayDeque<>();
-
-  private boolean closed = false;
-
+  public static final int BUFFER_SIZE = 1024;
   private final SelectionKey key;
   private final SocketChannel sc;
-  private final Server server;
+  private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
+  private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
+  private final ArrayDeque<Packet> queue = new ArrayDeque<>();
+  private final PacketReader packetReader = new PacketReader();
+  private boolean closed = false;
 
-  private String pseudo;
+  private final Client client;
 
-  public Context(SelectionKey key, Server server) {
-    this.key = Objects.requireNonNull(key);
+  public Context(SelectionKey key, Client client) {
+    this.key = key;
     this.sc = (SocketChannel) key.channel();
-    this.server = Objects.requireNonNull(server);
-  }
-
-  public String pseudo() {
-    return pseudo;
+    this.client = client;
   }
 
   /**
@@ -55,30 +45,32 @@ class Context {
       packetReader.reset();
       processReceivedPacket(packet);
     }
+
     if (status == Reader.ProcessStatus.ERROR) {
-      System.out.println("bad packet read, bye bye");
       silentlyClose();
     }
   }
 
   private void processReceivedPacket(Packet packet) {
     System.out.println("received " + packet);
-
     switch (packet) {
       case ConnectNoAuth connectNoAuth -> {
-        if (server.addConnectedUserAndCheckUnique(connectNoAuth.pseudo())) {
-          pseudo = connectNoAuth.pseudo();
-          send(new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
-        } else {
-          System.out.println(
-              "Failed to connect user: " + connectNoAuth.pseudo() + " already exists");
-          send(new ConnectServerResponse(ConnectServerResponse.StatusCode.PSEUDO_ALREADY_TAKEN));
-        }
       }
       case ConnectAuth connectAuth -> {
-        throw new UnsupportedOperationException("Not yet implemented");
       }
       case ConnectServerResponse connectServerResponse -> {
+        switch (connectServerResponse.code()) {
+          case OK -> System.out.println("connected");
+          case PSEUDO_ALREADY_TAKEN -> {
+            System.out.println("pseudo already taken");
+            silentlyClose();
+            client.shutdown();
+          }
+          case INVALID_PSEUDO_OR_PASSWORD -> {
+            System.out.println("invalid pseudo or password");
+            silentlyClose();
+          }
+        }
       }
     }
   }
@@ -96,6 +88,9 @@ class Context {
     updateInterestOps();
   }
 
+  /**
+   * Try to fill bufferOut from the queue
+   */
   private void processOut() {
     while (!queue.isEmpty() && bufferOut.remaining() >= queue.peek().length()) {
       var packetBuffer = queue.poll().toByteBuffer().flip();
@@ -108,46 +103,46 @@ class Context {
    * closed and of both ByteBuffers.
    * <p>
    * The convention is that both buffers are in write-mode before the call to
-   * updateInterestOps and after the call. Also, it is assumed that a "process" method has
+   * updateInterestOps and after the call. Also it is assumed that process has
    * been called just before updateInterestOps.
    */
   private void updateInterestOps() {
-    var ops = 0;
+    var interestOps = 0;
+
+    if (bufferOut.position() > 0) {
+      interestOps |= SelectionKey.OP_WRITE;
+    }
 
     if (!closed && bufferIn.hasRemaining()) {
-      ops |= OP_READ;
+      interestOps |= SelectionKey.OP_READ;
     }
 
-    if (bufferOut.position() != 0) {
-      ops |= OP_WRITE;
-    }
-
-    if (ops == 0) {
+    if (interestOps == 0) {
       silentlyClose();
       return;
     }
 
-    key.interestOps(ops);
-    key.selector().wakeup();
+    key.interestOps(interestOps);
   }
 
   private void silentlyClose() {
     try {
       sc.close();
+      closed = true;
     } catch (IOException e) {
       // ignore exception
     }
   }
 
   /**
-   * Performs the read action on sc
+   * Performs the read action on sc.
    * <p>
    * The convention is that both buffers are in write-mode before the call to
    * doRead and after the call
    *
    * @throws IOException
    */
-  public void doRead() throws IOException {
+  void doRead() throws IOException {
     if (sc.read(bufferIn) == -1) {
       closed = true;
     }
@@ -156,14 +151,14 @@ class Context {
   }
 
   /**
-   * Performs the write action on sc
+   * Performs the write action on sc.
    * <p>
    * The convention is that both buffers are in write-mode before the call to
    * doWrite and after the call
    *
-   * @throws IOException
+   * @throws IOException if an I/O error occurs during the write operation on the SocketChannel
    */
-  public void doWrite() throws IOException {
+  void doWrite() throws IOException {
     bufferOut.flip();
     sc.write(bufferOut);
     bufferOut.compact();
@@ -171,4 +166,12 @@ class Context {
     updateInterestOps();
   }
 
+  void doConnect() throws IOException {
+    if (!sc.finishConnect()) {
+      return; // the selector gave a bad hint
+    }
+    key.interestOps(SelectionKey.OP_WRITE);
+    System.out.println("my adress : " + sc.getLocalAddress());
+    send(new ConnectNoAuth("adrien"));
+  }
 }
