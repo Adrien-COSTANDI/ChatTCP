@@ -99,7 +99,7 @@ class ConnectServerResponseReaderTest {
     assertEquals(value1, reader.get());
 
     // vérifie qu'on a remis en mode ecriture (compact)
-    assertEquals(2 * Byte.BYTES, buffer.position());
+    assertEquals(value2.length(), buffer.position());
     assertEquals(buffer.capacity(), buffer.limit());
 
     reader.reset();

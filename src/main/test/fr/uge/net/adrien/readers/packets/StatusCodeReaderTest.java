@@ -86,7 +86,7 @@ class StatusCodeReaderTest {
     assertEquals(value1, reader.get());
 
     // vérifie qu'on a remis en mode ecriture (compact)
-    assertEquals(Byte.BYTES, buffer.position());
+    assertEquals(ConnectServerResponse.StatusCode.BYTES, buffer.position());
     assertEquals(buffer.capacity(), buffer.limit());
 
     reader.reset();

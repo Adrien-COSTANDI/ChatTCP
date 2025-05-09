@@ -42,14 +42,14 @@ public class StringReaderTest {
     var buffer = ByteBuffer.allocate(1024);
     var bytes = StandardCharsets.UTF_8.encode(string);
     var bytes2 = StandardCharsets.UTF_8.encode(string2);
+    short byte2Size = (short) bytes2.remaining();
     buffer.putShort((short) bytes.remaining())
-        .put(bytes)
-        .putShort((short) bytes2.remaining())
+        .put(bytes).putShort(byte2Size)
         .put(bytes2);
     StringReader sr = new StringReader();
     assertEquals(Reader.ProcessStatus.DONE, sr.process(buffer));
     assertEquals(string, sr.get());
-    assertEquals(13, buffer.position());
+    assertEquals(Short.BYTES + byte2Size, buffer.position());
     assertEquals(buffer.capacity(), buffer.limit());
     sr.reset();
     assertEquals(Reader.ProcessStatus.DONE, sr.process(buffer));

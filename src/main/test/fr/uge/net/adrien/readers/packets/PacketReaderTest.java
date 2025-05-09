@@ -97,7 +97,7 @@ class PacketReaderTest {
     assertEquals(packet, reader.get());
 
     // vérifie qu'on a remis en mode ecriture (compact)
-    assertEquals(9, buffer.position()); // Albert
+    assertEquals(value2.length(), buffer.position()); // Albert
     assertEquals(buffer.capacity(), buffer.limit());
 
     reader.reset();
