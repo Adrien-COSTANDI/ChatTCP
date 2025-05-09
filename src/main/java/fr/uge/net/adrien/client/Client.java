@@ -8,6 +8,7 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import static fr.uge.net.adrien.client.commands.Command.COMMAND_PREFIX;
@@ -24,12 +25,18 @@ public class Client {
   private final Selector selector;
   private Context uniqueContext;
 
-  public Client(InetSocketAddress serverAddress) throws IOException {
+  private final String pseudo;
+  private final String password;
+
+  public Client(String pseudo, String password, InetSocketAddress serverAddress)
+      throws IOException {
     this.serverAddress = serverAddress;
     consoleBlockingQueue = new BlockingQueue<>();
     selector = Selector.open();
     console = new Thread(new Console(consoleBlockingQueue, selector));
     sc = SocketChannel.open();
+    this.pseudo = pseudo;
+    this.password = password;
   }
 
   /**
@@ -86,6 +93,14 @@ public class Client {
     }
   }
 
+  public String pseudo() {
+    return pseudo;
+  }
+
+  public Optional<String> password() {
+    return Optional.ofNullable(password);
+  }
+
   /**
    * Processes the message from the BlockingQueue
    */
@@ -106,6 +121,12 @@ public class Client {
   }
 
   public static void main(String[] args) throws IOException {
-    new Client(new InetSocketAddress("localhost", 9999)).start();
+    if (args.length == 2) {
+      new Client(args[0], args[1], new InetSocketAddress("localhost", 9999)).start();
+    } else if (args.length == 1) {
+      new Client(args[0], null, new InetSocketAddress("localhost", 9999)).start();
+    } else {
+      System.err.println("Usage: java Client <pseudo> [password]");
+    }
   }
 }

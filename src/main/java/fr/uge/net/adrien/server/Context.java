@@ -12,6 +12,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -66,17 +67,38 @@ class Context {
 
     switch (packet) {
       case ConnectNoAuth connectNoAuth -> {
-        if (server.addConnectedUserAndCheckUnique(connectNoAuth.pseudo())) {
-          pseudo = connectNoAuth.pseudo();
-          send(new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
-        } else {
-          System.out.println(
-              "Failed to connect user: " + connectNoAuth.pseudo() + " already exists");
-          send(new ConnectServerResponse(ConnectServerResponse.StatusCode.PSEUDO_ALREADY_TAKEN));
+        switch (server.connect(connectNoAuth.pseudo(), Optional.empty())) {
+          case INVALID_USER_OR_PASSWORD -> {
+            throw new AssertionError("Should not happen in NoAuth mode");
+          }
+          case USERNAME_EXISTS -> {
+            System.out.println(
+                "Failed to connect user: " + connectNoAuth.pseudo() + " already exists");
+            send(new ConnectServerResponse(ConnectServerResponse.StatusCode.PSEUDO_ALREADY_TAKEN));
+          }
+          case OK -> {
+            pseudo = connectNoAuth.pseudo();
+            send(new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
+          }
         }
       }
       case ConnectAuth connectAuth -> {
-        throw new UnsupportedOperationException("Not yet implemented");
+        switch (server.connect(connectAuth.pseudo(), Optional.of(connectAuth.password()))) {
+          case INVALID_USER_OR_PASSWORD -> {
+            System.out.println(
+                "Failed to connect user: " + connectAuth.pseudo() + " invalid pseudo or password");
+            send(new ConnectServerResponse(ConnectServerResponse.StatusCode.INVALID_PSEUDO_OR_PASSWORD));
+          }
+          case USERNAME_EXISTS -> {
+            System.out.println(
+                "Failed to connect user: " + connectAuth.pseudo() + " already exists");
+            send(new ConnectServerResponse(ConnectServerResponse.StatusCode.PSEUDO_ALREADY_TAKEN));
+          }
+          case OK -> {
+            pseudo = connectAuth.pseudo();
+            send(new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
+          }
+        }
       }
       case ConnectServerResponse connectServerResponse -> {
       }

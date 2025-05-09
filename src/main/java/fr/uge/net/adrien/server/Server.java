@@ -7,6 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -24,6 +25,7 @@ public class Server {
   private int roundRobinIndex = 0;
 
   private final Set<String> connectedUsers = Collections.synchronizedSet(new HashSet<>());
+  private final Database database = Database.getInstance();
 
   public Server() throws IOException {
     serverSocketChannel = ServerSocketChannel.open();
@@ -81,17 +83,31 @@ public class Server {
   }
 
   /**
-   * Adds a user to the collection of connected users and checks if the user is unique.
-   * If the user is successfully added to the set of connected users (i.e., the user
-   * was not already present), the method returns true. Otherwise, it returns false.
+   * Attempts to connect a user to the server using the provided pseudo and optional password.
+   * <p>
+   * If a password is not provided, the method checks if the pseudo already exists in the database.
+   * If the pseudo does not exist, the user is added to the connected users. If a password is provided,
+   * the method verifies the pseudo-password combination before attempting to add the user to the connected users.
    *
-   * @param user the username of the user to add to the connected users set
-   * @return true if the user was successfully added (i.e., the user is unique),
-   * false if the user already exists in the set
+   * @param pseudo the username to connect
+   * @param password an optional password associated with the username
+   * @return the connection status:
+   *         - {@code ConnectStatus.OK} if the connection is successful
+   *         - {@code ConnectStatus.USERNAME_EXISTS} if the user is already connected
+   *         - {@code ConnectStatus.INVALID_USER_OR_PASSWORD} if the pseudo or password is invalid
    */
-  public boolean addConnectedUserAndCheckUnique(String user) {
-    logger.info("User " + user + " connected");
-    return connectedUsers.add(user);
+  public ConnectStatus connect(String pseudo, Optional<String> password) {
+    if (password.isEmpty()) {
+      if (database.usernameExists(pseudo)) {
+        return ConnectStatus.USERNAME_EXISTS;
+      }
+      return connectedUsers.add(pseudo) ? ConnectStatus.OK : ConnectStatus.USERNAME_EXISTS;
+    }
+
+    if (database.passwordMatch(pseudo, password.get())) {
+      return connectedUsers.add(pseudo) ? ConnectStatus.OK : ConnectStatus.USERNAME_EXISTS;
+    }
+    return ConnectStatus.INVALID_USER_OR_PASSWORD;
   }
 
   /**

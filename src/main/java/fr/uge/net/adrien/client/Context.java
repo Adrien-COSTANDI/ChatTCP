@@ -69,6 +69,7 @@ class Context {
           case INVALID_PSEUDO_OR_PASSWORD -> {
             System.out.println("invalid pseudo or password");
             silentlyClose();
+            client.shutdown();
           }
         }
       }
@@ -172,6 +173,11 @@ class Context {
     }
     key.interestOps(SelectionKey.OP_WRITE);
     System.out.println("my adress : " + sc.getLocalAddress());
-    send(new ConnectNoAuth("adrien"));
+
+    if (client.password().isPresent()) {
+      send(new ConnectAuth(client.pseudo(), client.password().orElseThrow()));
+    } else {
+      send(new ConnectNoAuth(client.pseudo()));
+    }
   }
 }
