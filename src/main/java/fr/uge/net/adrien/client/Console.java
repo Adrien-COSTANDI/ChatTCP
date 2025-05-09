@@ -36,13 +36,12 @@ class Console implements Runnable {
    */
   @Override
   public void run() {
-    logger.info("Started Console Thread");
     try (var scanner = new Scanner(System.in)) {
-      while (scanner.hasNextLine()) {
+      while (!Thread.interrupted() && scanner.hasNextLine()) {
         var str = scanner.nextLine();
         sendCommand(str);
       }
-      logger.info("Console thread stopping");
     }
+    logger.warning("Console thread stopped");
   }
 }
