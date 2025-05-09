@@ -22,6 +22,10 @@ DmResponse, DmConnect, DmText, DmFileHeader, DmFile*/ {
    */
   ByteBuffer toByteBuffer();
 
+  default int length() {
+    return toByteBuffer().flip().remaining();
+  }
+
   enum Opcode {
 
     CONNECT_NO_AUTH(1),
