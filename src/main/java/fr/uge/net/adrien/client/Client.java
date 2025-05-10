@@ -1,6 +1,7 @@
 package fr.uge.net.adrien.client;
 
 import fr.uge.net.adrien.client.commands.Command;
+import fr.uge.net.adrien.packets.ClientPublicMessage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -55,7 +56,7 @@ public class Client {
     while (!Thread.interrupted()) {
       try {
         selector.select(this::treatKey);
-        processCommands();
+        processInputs();
       } catch (InterruptedException e) {
         logger.warning("Console thread is dead");
       } catch (ClosedSelectorException e) {
@@ -102,20 +103,21 @@ public class Client {
   }
 
   /**
-   * Processes the message from the BlockingQueue
+   * Processes the inputs from the BlockingQueue
    */
-  private void processCommands() throws InterruptedException {
+  private void processInputs() throws InterruptedException {
     while (!consoleBlockingQueue.isEmpty()) {
       var message = consoleBlockingQueue.take();
 
-      if (message.charAt(0) == COMMAND_PREFIX) {
-        try {
-          Command.parse(message).execute();
-        } catch (IllegalArgumentException e) {
-          System.err.println(e.getMessage());
-        }
-      } else {
-        System.out.println("received: " + message);
+      if (message.charAt(0) != COMMAND_PREFIX) {
+        uniqueContext.send(new ClientPublicMessage(message));
+        continue;
+      }
+
+      try {
+        Command.parse(message).execute();
+      } catch (IllegalArgumentException e) {
+        System.err.println(e.getMessage());
       }
     }
   }

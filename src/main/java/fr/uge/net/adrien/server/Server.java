@@ -1,5 +1,6 @@
 package fr.uge.net.adrien.server;
 
+import fr.uge.net.adrien.packets.Packet;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
@@ -126,6 +127,12 @@ public class Server {
     } catch (IOException e) {
       logger.severe("Server failed to start: " + e.getMessage());
       System.exit(1);
+    }
+  }
+
+  public void broadcast(Packet packet) {
+    for (var networkThread : networkThreads) {
+      networkThread.localBroadcast(packet);
     }
   }
 }

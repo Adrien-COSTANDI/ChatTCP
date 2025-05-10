@@ -1,5 +1,6 @@
 package fr.uge.net.adrien.server;
 
+import fr.uge.net.adrien.packets.Packet;
 import java.io.IOException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedSelectorException;
@@ -78,5 +79,13 @@ public class NetworkThread implements Runnable {
       }
     }
     logger.warning(threadName + " is down");
+  }
+
+  public void localBroadcast(Packet packet) {
+    localSelector.keys().forEach(key -> {
+      var context = (Context) key.attachment();
+      context.send(packet);
+      localSelector.wakeup();
+    });
   }
 }

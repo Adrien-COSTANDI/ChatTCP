@@ -1,9 +1,11 @@
 package fr.uge.net.adrien.client;
 
+import fr.uge.net.adrien.packets.ClientPublicMessage;
 import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
 import fr.uge.net.adrien.packets.Packet;
+import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
 import fr.uge.net.adrien.readers.Reader;
 import fr.uge.net.adrien.readers.packets.PacketReader;
 import java.io.IOException;
@@ -54,7 +56,7 @@ class Context {
   private void processReceivedPacket(Packet packet) {
     System.out.println("received " + packet);
     switch (packet) {
-      case ConnectNoAuth _, ConnectAuth _ -> {
+      case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _ -> {
       }
       case ConnectServerResponse connectServerResponse -> {
         switch (connectServerResponse.code()) {
@@ -71,6 +73,8 @@ class Context {
           }
         }
       }
+      case ServerForwardPublicMessage serverForwardPublicMessage -> System.out.println(
+          "[" + serverForwardPublicMessage.pseudo() + "] " + serverForwardPublicMessage.contenu());
     }
   }
 

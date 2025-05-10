@@ -1,9 +1,11 @@
 package fr.uge.net.adrien.server;
 
+import fr.uge.net.adrien.packets.ClientPublicMessage;
 import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
 import fr.uge.net.adrien.packets.Packet;
+import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
 import fr.uge.net.adrien.readers.Reader;
 import fr.uge.net.adrien.readers.packets.PacketReader;
 import java.io.IOException;
@@ -42,30 +44,12 @@ class Context {
     return pseudo;
   }
 
-  /**
-   * Process the content of bufferIn
-   * <p>
-   * The convention is that bufferIn is in write-mode before the call to process
-   * and after the call
-   */
-  private void processIn() {
-    Reader.ProcessStatus status;
-
-    while ((status = packetReader.process(bufferIn)) == Reader.ProcessStatus.DONE) {
-      var packet = packetReader.get();
-      packetReader.reset();
-      processReceivedPacket(packet);
-    }
-    if (status == Reader.ProcessStatus.ERROR) {
-      System.out.println("bad packet read, bye bye");
-      silentlyClose();
-    }
-  }
-
   private void processReceivedPacket(Packet packet) {
     System.out.println("received " + packet);
 
     switch (packet) {
+      case ConnectServerResponse _, ServerForwardPublicMessage _ -> {
+      }
       case ConnectNoAuth connectNoAuth -> {
         switch (server.connect(connectNoAuth.pseudo(), Optional.empty())) {
           case INVALID_USER_OR_PASSWORD ->
@@ -99,7 +83,10 @@ class Context {
           }
         }
       }
-      case ConnectServerResponse _ -> {
+      case ClientPublicMessage clientPublicMessage -> {
+        System.out.println(
+            "broadcasting " + clientPublicMessage.contenu() + " from " + pseudo + " to all users");
+        server.broadcast(new ServerForwardPublicMessage(clientPublicMessage.contenu(), pseudo));
       }
     }
   }
@@ -115,6 +102,26 @@ class Context {
     queue.add(packet);
     processOut();
     updateInterestOps();
+  }
+
+  /**
+   * Process the content of bufferIn
+   * <p>
+   * The convention is that bufferIn is in write-mode before the call to process
+   * and after the call
+   */
+  private void processIn() {
+    Reader.ProcessStatus status;
+
+    while ((status = packetReader.process(bufferIn)) == Reader.ProcessStatus.DONE) {
+      var packet = packetReader.get();
+      packetReader.reset();
+      processReceivedPacket(packet);
+    }
+    if (status == Reader.ProcessStatus.ERROR) {
+      System.out.println("bad packet read, bye bye");
+      silentlyClose();
+    }
   }
 
   private void processOut() {
