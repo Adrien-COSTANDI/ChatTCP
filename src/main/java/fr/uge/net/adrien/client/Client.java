@@ -2,6 +2,7 @@ package fr.uge.net.adrien.client;
 
 import fr.uge.net.adrien.client.commands.Command;
 import fr.uge.net.adrien.packets.ClientPublicMessage;
+import fr.uge.net.adrien.packets.Packet;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -34,7 +35,7 @@ public class Client {
     this.serverAddress = serverAddress;
     consoleBlockingQueue = new BlockingQueue<>();
     selector = Selector.open();
-    console = new Thread(new Console(consoleBlockingQueue, selector));
+    console = Thread.ofPlatform().daemon().unstarted(new Console(consoleBlockingQueue, selector));
     sc = SocketChannel.open();
     this.pseudo = pseudo;
     this.password = password;
@@ -61,8 +62,15 @@ public class Client {
         logger.warning("Console thread is dead");
       } catch (ClosedSelectorException e) {
         logger.warning("Selector is closed");
+      } catch (UncheckedIOException e) {
+        logger.warning(e.getCause().getMessage());
+        shutdown();
       }
     }
+  }
+
+  public void send(Packet packet) {
+    uniqueContext.send(packet);
   }
 
   public void shutdown() {
@@ -110,7 +118,7 @@ public class Client {
       var message = consoleBlockingQueue.take();
 
       if (message.charAt(0) != COMMAND_PREFIX) {
-        uniqueContext.send(new ClientPublicMessage(message));
+        send(new ClientPublicMessage(message));
         continue;
       }
 
