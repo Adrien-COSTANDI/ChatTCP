@@ -41,6 +41,12 @@ public class PacketReader implements Reader<Packet> {
             case CONNECT_SERVER_RESPONSE -> new ConnectServerResponseReader();
             case CLIENT_PUBLIC_MESSAGE -> new ClientPublicMessageReader();
             case SERVER_FORWARD_PUBLIC_MESSAGE -> new ServerForwardPublicMessageReader();
+            case DM_REQUEST -> new DmRequestReader();
+            case DM_RESPONSE -> new DmResponseReader();
+            case DM_CONNECT -> new DmConnectReader();
+            case DM_TEXT -> new DmTextReader();
+            // case DM_FILE_HEADER -> null;
+            // case DM_FILE_CONTENT -> null;
           };
         }
       }
