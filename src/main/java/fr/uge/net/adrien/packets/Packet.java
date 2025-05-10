@@ -9,7 +9,9 @@ import java.util.Optional;
  * Represents a generic Packet interface that can be converted into a ByteBuffer.
  * The interface also defines a nested {@code Opcode} enumeration for various packet types.
  */
-public sealed interface Packet permits ConnectNoAuth, ConnectAuth, ConnectServerResponse/*, ClientPublicMessage, ServerForwardPublicMessage, DmRequest,
+public sealed interface Packet
+    permits ConnectNoAuth, ConnectAuth, ConnectServerResponse, ClientPublicMessage,
+    ServerForwardPublicMessage/*, DmRequest,
 DmResponse, DmConnect, DmText, DmFileHeader, DmFile*/ {
 
   Charset CHARSET = StandardCharsets.UTF_8;
@@ -30,10 +32,9 @@ DmResponse, DmConnect, DmText, DmFileHeader, DmFile*/ {
 
     CONNECT_NO_AUTH(1),
     CONNECT_AUTH(2),
-    CONNECT_SERVER_RESPONSE(3),
-    /*CLIENT_PUBLIC_MESSAGE(4),
+    CONNECT_SERVER_RESPONSE(3), CLIENT_PUBLIC_MESSAGE(4),
     SERVER_FORWARD_PUBLIC_MESSAGE(5),
-    DM_REQUEST(6),
+    /*DM_REQUEST(6),
     DM_RESPONSE(7),
     DM_CONNECT(8),
     DM_TEXT(9),

@@ -39,6 +39,8 @@ public class PacketReader implements Reader<Packet> {
             case CONNECT_NO_AUTH -> new ConnectNoAuthReader();
             case CONNECT_AUTH -> new ConnectAuthReader();
             case CONNECT_SERVER_RESPONSE -> new ConnectServerResponseReader();
+            case CLIENT_PUBLIC_MESSAGE -> new ClientPublicMessageReader();
+            case SERVER_FORWARD_PUBLIC_MESSAGE -> new ServerForwardPublicMessageReader();
           };
         }
       }
