@@ -1,5 +1,7 @@
 package fr.uge.net.adrien.client.commands;
 
+import fr.uge.net.adrien.client.Client;
+
 public final class Connect implements Command {
 
   private final String[] args;
@@ -12,7 +14,7 @@ public final class Connect implements Command {
   }
 
   @Override
-  public void execute() {
+  public void execute(Client client) {
     System.out.println("Connect " + args[0]);
   }
 }

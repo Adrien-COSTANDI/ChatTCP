@@ -123,7 +123,7 @@ public class Client {
       }
 
       try {
-        Command.parse(message).execute();
+        Command.parse(message).execute(this);
       } catch (IllegalArgumentException e) {
         System.err.println(e.getMessage());
       }

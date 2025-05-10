@@ -1,5 +1,6 @@
 package fr.uge.net.adrien.client.commands;
 
+import fr.uge.net.adrien.client.Client;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -20,9 +21,11 @@ public sealed interface Command permits Accept, Connect, Deny, Help, Requests {
   char COMMAND_PREFIX = '/';
 
   /**
-   * Executes the command.
+   * Executes the command with the given {@link Client}.
+   *
+   * @param client the client to operate the command with
    */
-  void execute();
+  void execute(Client client);
 
   /**
    * Parses a given input line and returns the corresponding command instance.
