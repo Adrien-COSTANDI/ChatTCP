@@ -9,6 +9,14 @@ public record DmResponse(String pseudo,
                          Optional<Long> nonce,
                          Optional<Address> address) implements Packet {
 
+  public DmResponse(String pseudo, Response ok) {
+    this(pseudo, ok, Optional.empty(), Optional.empty());
+  }
+
+  public DmResponse(String pseudo, Response ok, long nonce, Address address) {
+    this(pseudo, ok, Optional.of(nonce), Optional.of(address));
+  }
+
   @Override
   public ByteBuffer toByteBuffer() {
     var bbEmitter = Packet.CHARSET.encode(pseudo);
