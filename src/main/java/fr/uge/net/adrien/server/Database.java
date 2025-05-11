@@ -2,7 +2,7 @@ package fr.uge.net.adrien.server;
 
 import java.util.Map;
 
-public class Database {
+class Database {
 
   private static final Database instance = new Database();
   private final Map<String, String> database = Map.of("Alice", "1234", "Bob", "1234");

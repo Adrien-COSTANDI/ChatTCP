@@ -9,7 +9,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
-public class NetworkThread implements Runnable {
+class NetworkThread implements Runnable {
 
   private static final Logger logger = Logger.getLogger(NetworkThread.class.getName());
   private final Selector localSelector;
