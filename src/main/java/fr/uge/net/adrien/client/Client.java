@@ -1,14 +1,17 @@
 package fr.uge.net.adrien.client;
 
+import fr.uge.net.adrien.Context;
 import fr.uge.net.adrien.client.commands.Command;
 import fr.uge.net.adrien.packets.ClientPublicMessage;
 import fr.uge.net.adrien.packets.Packet;
+import fr.uge.net.adrien.packets.common.Address;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -25,12 +28,17 @@ public class Client {
   private final SocketChannel sc;
   private final InetSocketAddress serverAddress;
   private final Selector selector;
-  private Context uniqueContext;
+  private WithServerContext withServerContext;
 
   private final String pseudo;
   private final String password;
 
-  public Client(String pseudo, String password, InetSocketAddress serverAddress)
+  private final ServerSocketChannel serverSocketChannel;
+  private final FriendManager friendManager;
+
+  private final Address address;
+
+  public Client(String pseudo, String password, InetSocketAddress serverAddress, int port)
       throws IOException {
     this.serverAddress = serverAddress;
     consoleBlockingQueue = new BlockingQueue<>();
@@ -39,15 +47,25 @@ public class Client {
     sc = SocketChannel.open();
     this.pseudo = pseudo;
     this.password = password;
+    this.friendManager = new FriendManager();
+
+    var inetSocketAddress = new InetSocketAddress(port);
+    this.address = new Address(inetSocketAddress);
+    serverSocketChannel = ServerSocketChannel.open();
+    serverSocketChannel.bind(inetSocketAddress);
   }
 
   /**
    * Starts the console thread and the main loop to process commands sent from the console thread.
    */
   public void start() throws IOException {
+    serverSocketChannel.configureBlocking(false);
+    serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
     sc.configureBlocking(false);
     var key = sc.register(selector, SelectionKey.OP_CONNECT);
-    uniqueContext = new Context(key, this);
+    withServerContext = new WithServerContext(key, this);
+    key.attach(withServerContext);
     sc.connect(serverAddress);
 
     console.start();
@@ -69,8 +87,16 @@ public class Client {
     }
   }
 
-  public void send(Packet packet) {
-    uniqueContext.send(packet);
+  public void sendToServer(Packet packet) {
+    withServerContext.send(packet);
+  }
+
+  public void sendToFriend(String pseudo, Packet packet) {
+    friendManager.sendTo(pseudo, packet);
+  }
+
+  void addFriend(String friend, FriendContext friendContext) {
+    friendManager.addFriend(friend, friendContext);
   }
 
   public void shutdown() {
@@ -85,16 +111,31 @@ public class Client {
     Thread.currentThread().interrupt();
   }
 
+  private void doAccept(SelectionKey key) throws IOException {
+    var friend = serverSocketChannel.accept();
+    if (friend == null) {
+      return;
+    }
+    friend.configureBlocking(false);
+    var friendKey = friend.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+    var friendContext = new FriendContext(friendKey, this);
+    friendKey.attach(friendContext);
+    // FIXME friendManager.addFriend(friend.getRemoteAddress().toString(), friendContext);
+  }
+
   private void treatKey(SelectionKey key) {
     try {
+      if (key.isValid() && key.isAcceptable()) {
+        doAccept(key); // only serverSocketChannel
+      }
       if (key.isValid() && key.isConnectable()) {
-        uniqueContext.doConnect();
+        ((ClientContext) key.attachment()).doConnect();
       }
       if (key.isValid() && key.isWritable()) {
-        uniqueContext.doWrite();
+        ((Context) key.attachment()).doWrite();
       }
       if (key.isValid() && key.isReadable()) {
-        uniqueContext.doRead();
+        ((Context) key.attachment()).doRead();
       }
     } catch (IOException ioe) {
       // lambda call in select requires to tunnel IOException
@@ -110,6 +151,10 @@ public class Client {
     return Optional.ofNullable(password);
   }
 
+  public Address address() {
+    return address;
+  }
+
   /**
    * Processes the inputs from the BlockingQueue
    */
@@ -118,7 +163,7 @@ public class Client {
       var message = consoleBlockingQueue.take();
 
       if (message.charAt(0) != COMMAND_PREFIX) {
-        send(new ClientPublicMessage(message));
+        sendToServer(new ClientPublicMessage(message));
         continue;
       }
 
@@ -131,12 +176,18 @@ public class Client {
   }
 
   public static void main(String[] args) throws IOException {
-    if (args.length == 2) {
-      new Client(args[0], args[1], new InetSocketAddress("localhost", 9999)).start();
-    } else if (args.length == 1) {
-      new Client(args[0], null, new InetSocketAddress("localhost", 9999)).start();
+    if (args.length == 3) {
+      new Client(args[0],
+                 args[1],
+                 new InetSocketAddress("localhost", 9999),
+                 Integer.parseInt(args[2])).start();
+    } else if (args.length == 2) {
+      new Client(args[0],
+                 null,
+                 new InetSocketAddress("localhost", 9999),
+                 Integer.parseInt(args[1])).start();
     } else {
-      System.err.println("Usage: java Client <pseudo> [password]");
+      System.err.println("Usage: java Client <pseudo> [password] <port>");
     }
   }
 }

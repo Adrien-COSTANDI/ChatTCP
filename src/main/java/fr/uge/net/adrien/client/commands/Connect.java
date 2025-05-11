@@ -1,6 +1,7 @@
 package fr.uge.net.adrien.client.commands;
 
 import fr.uge.net.adrien.client.Client;
+import fr.uge.net.adrien.packets.DmRequest;
 
 public final class Connect implements Command {
 
@@ -15,6 +16,6 @@ public final class Connect implements Command {
 
   @Override
   public void execute(Client client) {
-    System.out.println("Connect " + args[0]);
+    client.sendToServer(new DmRequest(args[0]));
   }
 }
