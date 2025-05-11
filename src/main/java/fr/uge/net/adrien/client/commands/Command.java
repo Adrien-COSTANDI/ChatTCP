@@ -53,7 +53,7 @@ public sealed interface Command permits Accept, Connect, Deny, Help, Requests {
     if (line.isBlank()) {
       throw new IllegalArgumentException("Empty line is not a valid command");
     }
-    line = line.trim().toLowerCase();
+    line = line.trim();
 
     var array = line.split("[ \t]+", 2);
     var command = array[0].substring(1);
