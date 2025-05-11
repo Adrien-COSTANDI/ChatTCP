@@ -4,6 +4,10 @@ import fr.uge.net.adrien.packets.ClientPublicMessage;
 import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
+import fr.uge.net.adrien.packets.DmConnect;
+import fr.uge.net.adrien.packets.DmRequest;
+import fr.uge.net.adrien.packets.DmResponse;
+import fr.uge.net.adrien.packets.DmText;
 import fr.uge.net.adrien.packets.Packet;
 import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
 import fr.uge.net.adrien.readers.Reader;
@@ -51,7 +55,7 @@ class Context {
       case ConnectServerResponse _, ServerForwardPublicMessage _ -> {
       }
       case ConnectNoAuth connectNoAuth -> {
-        switch (server.connect(connectNoAuth.pseudo(), Optional.empty())) {
+        switch (server.connect(connectNoAuth.pseudo(), Optional.empty(), this)) {
           case INVALID_USER_OR_PASSWORD ->
               throw new AssertionError("Should not happen in NoAuth mode");
           case USERNAME_EXISTS -> {
@@ -66,7 +70,7 @@ class Context {
         }
       }
       case ConnectAuth connectAuth -> {
-        switch (server.connect(connectAuth.pseudo(), Optional.of(connectAuth.password()))) {
+        switch (server.connect(connectAuth.pseudo(), Optional.of(connectAuth.password()), this)) {
           case INVALID_USER_OR_PASSWORD -> {
             System.out.println(
                 "Failed to connect user: " + connectAuth.pseudo() + " invalid pseudo or password");
@@ -87,6 +91,14 @@ class Context {
         System.out.println(
             "broadcasting " + clientPublicMessage.contenu() + " from " + pseudo + " to all users");
         server.broadcast(new ServerForwardPublicMessage(clientPublicMessage.contenu(), pseudo));
+      }
+      case DmRequest dmRequest -> {
+      }
+      case DmResponse dmResponse -> {
+      }
+      case DmConnect dmConnect -> {
+      }
+      case DmText dmText -> {
       }
     }
   }

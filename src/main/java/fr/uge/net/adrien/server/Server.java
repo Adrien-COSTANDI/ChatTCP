@@ -6,10 +6,9 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public class Server {
@@ -25,7 +24,7 @@ public class Server {
   private final ArrayList<NetworkThread> networkThreads = new ArrayList<>(NB_THREADS_SERVER);
   private int roundRobinIndex = 0;
 
-  private final Set<String> connectedUsers = Collections.synchronizedSet(new HashSet<>());
+  private final Map<String, Context> connectedUsersContexts = new ConcurrentHashMap<>();
   private final Database database = Database.getInstance();
 
   public Server() throws IOException {
@@ -97,18 +96,27 @@ public class Server {
    *         - {@code ConnectStatus.USERNAME_EXISTS} if the user is already connected
    *         - {@code ConnectStatus.INVALID_USER_OR_PASSWORD} if the pseudo or password is invalid
    */
-  public ConnectStatus connect(String pseudo, Optional<String> password) {
-    if (password.isEmpty()) {
-      if (database.usernameExists(pseudo)) {
-        return ConnectStatus.USERNAME_EXISTS;
+  ConnectStatus connect(String pseudo, Optional<String> password, Context context) {
+    if (password.isPresent()) {
+      if (!database.passwordMatch(pseudo, password.get())) {
+        return ConnectStatus.INVALID_USER_OR_PASSWORD;
       }
-      return connectedUsers.add(pseudo) ? ConnectStatus.OK : ConnectStatus.USERNAME_EXISTS;
+      return putAndCheckIfUsernameAvailable(pseudo, context);
     }
 
-    if (database.passwordMatch(pseudo, password.get())) {
-      return connectedUsers.add(pseudo) ? ConnectStatus.OK : ConnectStatus.USERNAME_EXISTS;
+    if (database.usernameExists(pseudo)) {
+      return ConnectStatus.USERNAME_EXISTS;
     }
-    return ConnectStatus.INVALID_USER_OR_PASSWORD;
+    return putAndCheckIfUsernameAvailable(pseudo, context);
+
+  }
+
+  private ConnectStatus putAndCheckIfUsernameAvailable(String pseudo, Context context) {
+    var previousContext = connectedUsersContexts.putIfAbsent(pseudo, context);
+    if (previousContext != null) {
+      return ConnectStatus.USERNAME_EXISTS;
+    }
+    return ConnectStatus.OK;
   }
 
   /**
@@ -118,7 +126,7 @@ public class Server {
    */
   public void removeConnectedUser(String user) {
     logger.info("User " + user + " disconnected");
-    connectedUsers.remove(user);
+    connectedUsersContexts.remove(user);
   }
 
   public static void main(String[] args) {
@@ -134,5 +142,15 @@ public class Server {
     for (var networkThread : networkThreads) {
       networkThread.localBroadcast(packet);
     }
+  }
+
+  public void sendTo(String pseudo, Packet packet) {
+    Context context = connectedUsersContexts.get(pseudo);
+    if (context == null) {
+      throw new IllegalStateException(
+          "Client not found: " + pseudo + " (expected one of: " + connectedUsersContexts.keySet() +
+          ")");
+    }
+    context.send(packet);
   }
 }
