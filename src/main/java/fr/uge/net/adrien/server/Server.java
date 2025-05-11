@@ -24,7 +24,7 @@ public class Server {
   private final ArrayList<NetworkThread> networkThreads = new ArrayList<>(NB_THREADS_SERVER);
   private int roundRobinIndex = 0;
 
-  private final Map<String, Context> connectedUsersContexts = new ConcurrentHashMap<>();
+  private final Map<String, ServerContext> connectedUsersContexts = new ConcurrentHashMap<>();
   private final Database database = Database.getInstance();
 
   public Server() throws IOException {
@@ -96,7 +96,7 @@ public class Server {
    *         - {@code ConnectStatus.USERNAME_EXISTS} if the user is already connected
    *         - {@code ConnectStatus.INVALID_USER_OR_PASSWORD} if the pseudo or password is invalid
    */
-  ConnectStatus connect(String pseudo, Optional<String> password, Context context) {
+  ConnectStatus connect(String pseudo, Optional<String> password, ServerContext context) {
     if (password.isPresent()) {
       if (!database.passwordMatch(pseudo, password.get())) {
         return ConnectStatus.INVALID_USER_OR_PASSWORD;
@@ -111,7 +111,7 @@ public class Server {
 
   }
 
-  private ConnectStatus putAndCheckIfUsernameAvailable(String pseudo, Context context) {
+  private ConnectStatus putAndCheckIfUsernameAvailable(String pseudo, ServerContext context) {
     var previousContext = connectedUsersContexts.putIfAbsent(pseudo, context);
     if (previousContext != null) {
       return ConnectStatus.USERNAME_EXISTS;
@@ -145,7 +145,7 @@ public class Server {
   }
 
   public void sendTo(String pseudo, Packet packet) {
-    Context context = connectedUsersContexts.get(pseudo);
+    var context = connectedUsersContexts.get(pseudo);
     if (context == null) {
       throw new IllegalStateException(
           "Client not found: " + pseudo + " (expected one of: " + connectedUsersContexts.keySet() +

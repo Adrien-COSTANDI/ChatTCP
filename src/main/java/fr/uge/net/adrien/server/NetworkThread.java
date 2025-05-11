@@ -25,7 +25,7 @@ class NetworkThread implements Runnable {
     try {
       client.configureBlocking(false);
       var selectionKey = client.register(localSelector, SelectionKey.OP_READ);
-      selectionKey.attach(new Context(selectionKey, server));
+      selectionKey.attach(new ServerContext(selectionKey, server));
       localSelector.wakeup();
     } catch (IOException e) {
       logger.warning(e.getMessage());
@@ -34,7 +34,7 @@ class NetworkThread implements Runnable {
   }
 
   private void treatKey(SelectionKey key) {
-    var contextForClient = (Context) key.attachment();
+    var contextForClient = (ServerContext) key.attachment();
     try {
       if (key.isValid() && key.isWritable()) {
         contextForClient.doWrite();
@@ -83,7 +83,7 @@ class NetworkThread implements Runnable {
 
   public void localBroadcast(Packet packet) {
     localSelector.keys().forEach(key -> {
-      var context = (Context) key.attachment();
+      var context = (ServerContext) key.attachment();
       context.send(packet);
       localSelector.wakeup();
     });

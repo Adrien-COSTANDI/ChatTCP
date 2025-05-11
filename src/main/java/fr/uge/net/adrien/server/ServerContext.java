@@ -1,5 +1,6 @@
 package fr.uge.net.adrien.server;
 
+import fr.uge.net.adrien.Context;
 import fr.uge.net.adrien.packets.ClientPublicMessage;
 import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
@@ -23,7 +24,7 @@ import java.util.Optional;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-class Context {
+class ServerContext implements Context {
 
   private final ByteBuffer bufferIn = ByteBuffer.allocate(Server.BUFFER_SIZE);
   private final ByteBuffer bufferOut = ByteBuffer.allocate(Server.BUFFER_SIZE);
@@ -38,7 +39,7 @@ class Context {
 
   private String pseudo;
 
-  public Context(SelectionKey key, Server server) {
+  public ServerContext(SelectionKey key, Server server) {
     this.key = Objects.requireNonNull(key);
     this.sc = (SocketChannel) key.channel();
     this.server = Objects.requireNonNull(server);
@@ -93,8 +94,14 @@ class Context {
         server.broadcast(new ServerForwardPublicMessage(clientPublicMessage.contenu(), pseudo));
       }
       case DmRequest dmRequest -> {
+        server.sendTo(dmRequest.pseudo(), new DmRequest(pseudo));
       }
       case DmResponse dmResponse -> {
+        server.sendTo(dmResponse.pseudo(),
+                      new DmResponse(pseudo,
+                                     dmResponse.ok(),
+                                     dmResponse.nonce(),
+                                     dmResponse.address()));
       }
       case DmConnect dmConnect -> {
       }
