@@ -8,6 +8,7 @@ import fr.uge.net.adrien.packets.common.Address;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -82,7 +83,6 @@ public class Client {
         logger.warning("Selector is closed");
       } catch (UncheckedIOException e) {
         logger.warning(e.getCause().getMessage());
-        shutdown();
       }
     }
   }
@@ -95,8 +95,32 @@ public class Client {
     friendManager.sendTo(pseudo, packet);
   }
 
-  void addFriend(String friend, FriendContext friendContext) {
-    friendManager.addFriend(friend, friendContext);
+  void addAlmostFriend(SocketAddress remoteAddress, FriendContext friendContext) {
+    friendManager.addAlmostFriend(remoteAddress, friendContext);
+  }
+
+  void confirmFriendship(SocketAddress address, String pseudo) {
+    friendManager.confirmFriendShip(address, pseudo);
+  }
+
+  public String getFriend(SocketAddress address) {
+    return friendManager.getFriend(address);
+  }
+
+  public void makeANewFriend(String friend, SocketAddress address) {
+    System.out.println("Adding friend " + friend + " at " + address + " ...");
+    try {
+      var scFriend = SocketChannel.open();
+      scFriend.configureBlocking(false);
+      var key = scFriend.register(selector, SelectionKey.OP_CONNECT);
+      var context = new FriendContext(key, this);
+      key.attach(context);
+      scFriend.connect(address);
+      friendManager.addFriend(friend, context);
+    } catch (IOException e) {
+      logger.warning("Failed to connect to " + friend + ": " + e.getMessage());
+      friendManager.removeFriend(friend);
+    }
   }
 
   public void shutdown() {
@@ -120,7 +144,8 @@ public class Client {
     var friendKey = friend.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     var friendContext = new FriendContext(friendKey, this);
     friendKey.attach(friendContext);
-    // FIXME friendManager.addFriend(friend.getRemoteAddress().toString(), friendContext);
+    // add friend here, but I don't have the name
+    addAlmostFriend(friend.getRemoteAddress(), friendContext);
   }
 
   private void treatKey(SelectionKey key) {
@@ -161,6 +186,9 @@ public class Client {
   private void processInputs() throws InterruptedException {
     while (!consoleBlockingQueue.isEmpty()) {
       var message = consoleBlockingQueue.take();
+      if (message.isBlank()) {
+        continue;
+      }
 
       if (message.charAt(0) != COMMAND_PREFIX) {
         sendToServer(new ClientPublicMessage(message));

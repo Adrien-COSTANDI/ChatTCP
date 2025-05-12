@@ -30,13 +30,7 @@ class FriendContext extends AbstractContext implements ClientContext {
     System.out.println("received " + packet);
     switch (packet) {
       case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _, ConnectServerResponse _,
-           ServerForwardPublicMessage _ -> {
-      }
-      case DmRequest dmRequest -> {
-        client.sendToServer(new DmResponse(dmRequest.pseudo(), DmResponse.Response.NO));
-      }
-      case DmResponse dmResponse -> {
-
+           ServerForwardPublicMessage _, DmRequest _, DmResponse _ -> {
       }
       case DmConnect dmConnect -> {
         if (dmConnect.nonce() != nonce) {
@@ -44,11 +38,23 @@ class FriendContext extends AbstractContext implements ClientContext {
           silentlyClose();
           return;
         }
-        friendPseudo = dmConnect.pseudo();
-        client.sendToServer(new DmText("hi " + dmConnect.pseudo() + " !"));
+        try {
+          client.confirmFriendship(sc.getRemoteAddress(), dmConnect.pseudo());
+          friendPseudo = dmConnect.pseudo();
+          client.sendToFriend(dmConnect.pseudo(), new DmText("hi " + dmConnect.pseudo() + " !"));
+        } catch (IOException e) {
+          System.out.println("failed to add friend " + dmConnect.pseudo());
+          silentlyClose();
+          return;
+        }
       }
       case DmText dmText -> {
-        System.out.println("[" + friendPseudo + "] " + dmText.contenu());
+        try {
+          System.out.println(
+              "[" + client.getFriend(sc.getRemoteAddress()) + "] " + dmText.contenu());
+        } catch (IOException e) {
+          System.out.println("Impossible d'afficher la provenance du message");
+        }
       }
     }
   }
@@ -59,8 +65,9 @@ class FriendContext extends AbstractContext implements ClientContext {
       return;
     }
     key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-    System.out.println("my address : " + sc.getLocalAddress());
-
+    System.out.println("I'm connected to " + sc.getRemoteAddress());
+    // add friend here, but I don't have the name
+    client.addAlmostFriend(sc.getRemoteAddress(), this);
     send(new DmConnect(client.pseudo(), nonce));
   }
 }

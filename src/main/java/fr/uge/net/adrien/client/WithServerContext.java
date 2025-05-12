@@ -27,7 +27,7 @@ class WithServerContext extends AbstractContext implements ClientContext {
   protected void processReceivedPacket(Packet packet) {
     System.out.println("received " + packet);
     switch (packet) {
-      case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _ -> {
+      case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _, DmConnect _, DmText _ -> {
       }
       case ConnectServerResponse connectServerResponse -> {
         switch (connectServerResponse.code()) {
@@ -46,8 +46,8 @@ class WithServerContext extends AbstractContext implements ClientContext {
       }
       case ServerForwardPublicMessage serverForwardPublicMessage -> System.out.println(
           "[" + serverForwardPublicMessage.pseudo() + "] " + serverForwardPublicMessage.contenu());
-      case DmRequest dmRequest -> { // TODO
-        var nonce = ThreadLocalRandom.current().nextLong();
+      case DmRequest dmRequest -> {
+        var nonce = ThreadLocalRandom.current().nextLong(); // TODO
         client.sendToServer(new DmResponse(dmRequest.pseudo(),
                                            DmResponse.Response.YES,
                                            nonce,
@@ -66,15 +66,8 @@ class WithServerContext extends AbstractContext implements ClientContext {
           System.out.println(dmResponse.pseudo() + " refused your request");
           return;
         }
-
-        FriendContext friendContext = new FriendContext(key, client);
-        // client.addFriend(dmResponse.pseudo(), friendContext); // TODO PAS ICI
-        friendContext.send(new DmConnect(client.pseudo(), 123)); // TODO nonce
-      }
-      case DmConnect dmConnect -> {
-        // client.addFriend(dmConnect.pseudo(), new FriendContext(key, client));
-      }
-      case DmText dmText -> {
+        client.makeANewFriend(dmResponse.pseudo(), dmResponse.address().orElseThrow().address());
+        client.confirmFriendship(dmResponse.address().orElseThrow().address(), dmResponse.pseudo());
       }
     }
   }

@@ -1,18 +1,40 @@
 package fr.uge.net.adrien.client;
 
 import fr.uge.net.adrien.packets.Packet;
+import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.HashMap;
 
 class FriendManager {
 
   private final HashMap<String, FriendContext> friends = new HashMap<>();
+  private final HashMap<SocketAddress, FriendContext> almostFriends = new HashMap<>();
+  private final HashMap<SocketAddress, String> friendsByAddr = new HashMap<>();
 
   public void addFriend(String friend, FriendContext context) {
-    friends.put(friend, context);
+    friends.putIfAbsent(friend, context);
+    try {
+      friendsByAddr.put(context.sc.getRemoteAddress(), friend);
+    } catch (IOException e) {
+      throw new AssertionError("Couldn't get remote address of " + friend);
+    }
+  }
+
+  public void addAlmostFriend(SocketAddress address, FriendContext context) {
+    almostFriends.put(address, context);
+  }
+
+  public String getFriend(SocketAddress address) {
+    return friendsByAddr.get(address);
   }
 
   public void removeFriend(String friend) {
-    friends.remove(friend);
+    var context = friends.remove(friend);
+    try {
+      friendsByAddr.remove(context.sc.getRemoteAddress());
+    } catch (IOException e) {
+      throw new AssertionError("Couldn't get remote address of " + friend);
+    }
   }
 
   public void sendTo(String friend, Packet packet) {
@@ -21,5 +43,13 @@ class FriendManager {
       throw new IllegalArgumentException("Friend not found: " + friend);
     }
     context.send(packet);
+  }
+
+  public void confirmFriendShip(SocketAddress address, String pseudo) {
+    var trueFriend = almostFriends.remove(address);
+    if (trueFriend == null) {
+      return;
+    }
+    addFriend(pseudo, trueFriend);
   }
 }

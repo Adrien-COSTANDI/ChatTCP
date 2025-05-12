@@ -53,7 +53,7 @@ class ServerContext implements Context {
     System.out.println("received " + packet);
 
     switch (packet) {
-      case ConnectServerResponse _, ServerForwardPublicMessage _ -> {
+      case ConnectServerResponse _, ServerForwardPublicMessage _, DmText _, DmConnect _ -> {
       }
       case ConnectNoAuth connectNoAuth -> {
         switch (server.connect(connectNoAuth.pseudo(), Optional.empty(), this)) {
@@ -102,10 +102,6 @@ class ServerContext implements Context {
                                      dmResponse.ok(),
                                      dmResponse.nonce(),
                                      dmResponse.address()));
-      }
-      case DmConnect dmConnect -> {
-      }
-      case DmText dmText -> {
       }
     }
   }

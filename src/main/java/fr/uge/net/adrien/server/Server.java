@@ -147,9 +147,10 @@ public class Server {
   public void sendTo(String pseudo, Packet packet) {
     var context = connectedUsersContexts.get(pseudo);
     if (context == null) {
-      throw new IllegalStateException(
+      logger.warning(
           "Client not found: " + pseudo + " (expected one of: " + connectedUsersContexts.keySet() +
           ")");
+      return;
     }
     context.send(packet);
   }
