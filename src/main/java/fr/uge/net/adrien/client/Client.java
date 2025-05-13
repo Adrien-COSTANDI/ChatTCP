@@ -108,7 +108,7 @@ public class Client {
   }
 
   public void makeANewFriend(String friend, SocketAddress address) {
-    System.out.println("Adding friend " + friend + " at " + address + " ...");
+    logger.info("Adding friend " + friend + " at " + address + " ...");
     try {
       var scFriend = SocketChannel.open();
       scFriend.configureBlocking(false);
@@ -135,7 +135,7 @@ public class Client {
     Thread.currentThread().interrupt();
   }
 
-  private void doAccept(SelectionKey key) throws IOException {
+  private void doAccept() throws IOException {
     var friend = serverSocketChannel.accept();
     if (friend == null) {
       return;
@@ -151,7 +151,7 @@ public class Client {
   private void treatKey(SelectionKey key) {
     try {
       if (key.isValid() && key.isAcceptable()) {
-        doAccept(key); // only serverSocketChannel
+        doAccept(); // only serverSocketChannel
       }
       if (key.isValid() && key.isConnectable()) {
         ((ClientContext) key.attachment()).doConnect();
@@ -178,6 +178,10 @@ public class Client {
 
   public Address address() {
     return address;
+  }
+
+  public void display(String str) {
+    System.out.println(str);
   }
 
   /**

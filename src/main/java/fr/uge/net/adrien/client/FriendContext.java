@@ -11,7 +11,9 @@ import fr.uge.net.adrien.packets.DmText;
 import fr.uge.net.adrien.packets.Packet;
 import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
+import java.util.logging.Logger;
 
 
 class FriendContext extends AbstractContext implements ClientContext {
@@ -19,6 +21,8 @@ class FriendContext extends AbstractContext implements ClientContext {
   private final Client client;
   private long nonce;
   private String friendPseudo;
+  private SocketAddress friendAddress;
+  private static final Logger logger = Logger.getLogger(FriendContext.class.getName());
 
   public FriendContext(SelectionKey key, Client client) {
     super(key);
@@ -27,14 +31,14 @@ class FriendContext extends AbstractContext implements ClientContext {
 
 
   protected void processReceivedPacket(Packet packet) {
-    System.out.println("received " + packet);
+    logger.info("received " + packet);
     switch (packet) {
       case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _, ConnectServerResponse _,
            ServerForwardPublicMessage _, DmRequest _, DmResponse _ -> {
       }
       case DmConnect dmConnect -> {
         if (dmConnect.nonce() != nonce) {
-          System.out.println("received invalid nonce from " + dmConnect.pseudo());
+          logger.info("received invalid nonce from " + dmConnect.pseudo());
           silentlyClose();
           return;
         }
@@ -43,19 +47,13 @@ class FriendContext extends AbstractContext implements ClientContext {
           friendPseudo = dmConnect.pseudo();
           client.sendToFriend(dmConnect.pseudo(), new DmText("hi " + dmConnect.pseudo() + " !"));
         } catch (IOException e) {
-          System.out.println("failed to add friend " + dmConnect.pseudo());
+          client.display("failed to add friend " + dmConnect.pseudo());
           silentlyClose();
           return;
         }
       }
-      case DmText dmText -> {
-        try {
-          System.out.println(
-              "[" + client.getFriend(sc.getRemoteAddress()) + "] " + dmText.contenu());
-        } catch (IOException e) {
-          System.out.println("Impossible d'afficher la provenance du message");
-        }
-      }
+      case DmText dmText ->
+          client.display("[" + client.getFriend(friendAddress) + "] " + dmText.contenu());
     }
   }
 
@@ -65,9 +63,10 @@ class FriendContext extends AbstractContext implements ClientContext {
       return;
     }
     key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-    System.out.println("I'm connected to " + sc.getRemoteAddress());
+    friendAddress = sc.getRemoteAddress();
+    client.display("I'm connected to " + friendAddress);
     // add friend here, but I don't have the name
-    client.addAlmostFriend(sc.getRemoteAddress(), this);
+    client.addAlmostFriend(friendAddress, this);
     send(new DmConnect(client.pseudo(), nonce));
   }
 }
