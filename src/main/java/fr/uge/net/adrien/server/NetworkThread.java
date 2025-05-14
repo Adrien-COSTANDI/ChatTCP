@@ -43,7 +43,7 @@ class NetworkThread implements Runnable {
         serverContext.doRead();
       }
     } catch (IOException e) {
-      server.removeConnectedUser(serverContext.pseudo());
+      server.removeConnectedUser(serverContext.clientPseudo());
       silentlyClose(key.channel());
     }
   }

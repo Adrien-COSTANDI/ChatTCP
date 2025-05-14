@@ -37,7 +37,7 @@ class ServerContext implements Context {
   private final SocketChannel sc;
   private final Server server;
 
-  private String pseudo;
+  private String clientPseudo;
 
   public ServerContext(SelectionKey key, Server server) {
     this.key = Objects.requireNonNull(key);
@@ -45,8 +45,8 @@ class ServerContext implements Context {
     this.server = Objects.requireNonNull(server);
   }
 
-  public String pseudo() {
-    return pseudo;
+  public String clientPseudo() {
+    return clientPseudo;
   }
 
   private void processReceivedPacket(Packet packet) {
@@ -65,7 +65,7 @@ class ServerContext implements Context {
             send(new ConnectServerResponse(ConnectServerResponse.StatusCode.PSEUDO_ALREADY_TAKEN));
           }
           case OK -> {
-            pseudo = connectNoAuth.pseudo();
+            clientPseudo = connectNoAuth.pseudo();
             send(new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
           }
         }
@@ -83,22 +83,24 @@ class ServerContext implements Context {
             send(new ConnectServerResponse(ConnectServerResponse.StatusCode.PSEUDO_ALREADY_TAKEN));
           }
           case OK -> {
-            pseudo = connectAuth.pseudo();
+            clientPseudo = connectAuth.pseudo();
             send(new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
           }
         }
       }
       case ClientPublicMessage clientPublicMessage -> {
         System.out.println(
-            "broadcasting " + clientPublicMessage.contenu() + " from " + pseudo + " to all users");
-        server.broadcast(new ServerForwardPublicMessage(clientPublicMessage.contenu(), pseudo));
+            "broadcasting " + clientPublicMessage.contenu() + " from " + clientPseudo +
+                           " to all users");
+        server.broadcast(new ServerForwardPublicMessage(clientPublicMessage.contenu(),
+                                                        clientPseudo));
       }
       case DmRequest dmRequest -> {
-        server.sendTo(dmRequest.pseudo(), new DmRequest(pseudo));
+        server.sendTo(dmRequest.pseudo(), new DmRequest(clientPseudo));
       }
       case DmResponse dmResponse -> {
         server.sendTo(dmResponse.pseudo(),
-                      new DmResponse(pseudo,
+                      new DmResponse(clientPseudo,
                                      dmResponse.ok(),
                                      dmResponse.nonce(),
                                      dmResponse.address()));
