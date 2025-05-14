@@ -14,6 +14,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -29,6 +30,7 @@ public class Client {
   private final SocketChannel sc;
   private final InetSocketAddress serverAddress;
   private final Selector selector;
+  private final Path pathToFolder;
   private WithServerContext withServerContext;
 
   private final String pseudo;
@@ -39,7 +41,7 @@ public class Client {
 
   private final Address address;
 
-  public Client(String pseudo, String password, InetSocketAddress serverAddress, int port)
+  public Client(String pseudo, String password, InetSocketAddress serverAddress, Path pathToFolder)
       throws IOException {
     this.serverAddress = serverAddress;
     consoleBlockingQueue = new BlockingQueue<>();
@@ -49,11 +51,12 @@ public class Client {
     this.pseudo = pseudo;
     this.password = password;
     this.friendManager = new FriendManager();
+    this.pathToFolder = pathToFolder;
 
-    var inetSocketAddress = new InetSocketAddress(port);
-    this.address = new Address(inetSocketAddress);
+    var inetSocketAddress = new InetSocketAddress(0);
     serverSocketChannel = ServerSocketChannel.open();
-    serverSocketChannel.bind(inetSocketAddress);
+    var tmp = serverSocketChannel.bind(inetSocketAddress);
+    this.address = new Address((InetSocketAddress) tmp.getLocalAddress());
   }
 
   /**
@@ -208,18 +211,16 @@ public class Client {
   }
 
   public static void main(String[] args) throws IOException {
-    if (args.length == 3) {
-      new Client(args[0],
-                 args[1],
-                 new InetSocketAddress("localhost", 9999),
-                 Integer.parseInt(args[2])).start();
-    } else if (args.length == 2) {
-      new Client(args[0],
-                 null,
-                 new InetSocketAddress("localhost", 9999),
-                 Integer.parseInt(args[1])).start();
-    } else {
-      System.err.println("Usage: java Client <pseudo> [password] <port>");
+    switch (args.length) {
+      case 4 -> new Client(args[3],
+                           null,
+                           new InetSocketAddress(args[0], Integer.parseInt(args[1])),
+                           Path.of(args[2])).start();
+      case 5 -> new Client(args[3],
+                           args[4],
+                           new InetSocketAddress(args[0], Integer.parseInt(args[1])),
+                           Path.of(args[2])).start();
+      default -> System.out.println("Usage: java Client host port pathToFolder login [password]");
     }
   }
 }
