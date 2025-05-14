@@ -34,16 +34,16 @@ class NetworkThread implements Runnable {
   }
 
   private void treatKey(SelectionKey key) {
-    var contextForClient = (ServerContext) key.attachment();
+    var serverContext = (ServerContext) key.attachment();
     try {
       if (key.isValid() && key.isWritable()) {
-        contextForClient.doWrite();
+        serverContext.doWrite();
       }
       if (key.isValid() && key.isReadable()) {
-        contextForClient.doRead();
+        serverContext.doRead();
       }
     } catch (IOException e) {
-      server.removeConnectedUser(contextForClient.pseudo());
+      server.removeConnectedUser(serverContext.pseudo());
       silentlyClose(key.channel());
     }
   }
