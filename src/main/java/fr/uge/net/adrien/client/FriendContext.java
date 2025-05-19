@@ -19,8 +19,6 @@ import java.util.logging.Logger;
 class FriendContext extends AbstractContext implements ClientContext {
 
   private final Client client;
-  private long nonce;
-  private String friendPseudo;
   private SocketAddress friendAddress;
   private static final Logger logger = Logger.getLogger(FriendContext.class.getName());
 
@@ -37,14 +35,13 @@ class FriendContext extends AbstractContext implements ClientContext {
            ServerForwardPublicMessage _, DmRequest _, DmResponse _ -> {
       }
       case DmConnect dmConnect -> {
-        if (dmConnect.nonce() != nonce) {
+        if (dmConnect.nonce() != client.getNonceForFriend(dmConnect.pseudo())) {
           logger.info("received invalid nonce from " + dmConnect.pseudo());
           silentlyClose();
           return;
         }
         try {
           client.confirmFriendship(sc.getRemoteAddress(), dmConnect.pseudo());
-          friendPseudo = dmConnect.pseudo();
           client.sendToFriend(dmConnect.pseudo(), new DmText("hi " + dmConnect.pseudo() + " !"));
         } catch (IOException e) {
           client.display("failed to add friend " + dmConnect.pseudo());
@@ -67,6 +64,6 @@ class FriendContext extends AbstractContext implements ClientContext {
     client.display("I'm connected to " + friendAddress);
     // add friend here, but I don't have the name
     client.addAlmostFriend(friendAddress, this);
-    send(new DmConnect(client.pseudo(), nonce));
+    send(new DmConnect(client.pseudo(), client.getNonceForFriend(client.getFriend(friendAddress))));
   }
 }

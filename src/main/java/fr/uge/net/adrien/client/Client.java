@@ -15,7 +15,9 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static fr.uge.net.adrien.client.commands.Command.COMMAND_PREFIX;
@@ -40,6 +42,7 @@ public class Client {
   private final FriendManager friendManager;
 
   private final Address address;
+  private final Set<String> pendingDmRequest = new HashSet<>();
 
   public Client(String pseudo, String password, InetSocketAddress serverAddress, Path pathToFolder)
       throws IOException {
@@ -98,8 +101,20 @@ public class Client {
     friendManager.sendTo(pseudo, packet);
   }
 
+  public void setNonceForFriend(String pseudo, long nonce) {
+    friendManager.setNonceForFriend(pseudo, nonce);
+  }
+
+  public long getNonceForFriend(String pseudo) {
+    return friendManager.getNonceForFriend(pseudo);
+  }
+
   void addAlmostFriend(SocketAddress remoteAddress, FriendContext friendContext) {
     friendManager.addAlmostFriend(remoteAddress, friendContext);
+  }
+
+  public void addPendingDmRequest(String pseudo) {
+    pendingDmRequest.add(pseudo);
   }
 
   void confirmFriendship(SocketAddress address, String pseudo) {

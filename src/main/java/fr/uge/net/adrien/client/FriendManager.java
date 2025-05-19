@@ -10,6 +10,7 @@ class FriendManager {
   private final HashMap<String, FriendContext> friends = new HashMap<>();
   private final HashMap<SocketAddress, FriendContext> almostFriends = new HashMap<>();
   private final HashMap<SocketAddress, String> friendsByAddr = new HashMap<>();
+  private final HashMap<String, Long> friendNonce = new HashMap<>();
 
   public void addFriend(String friend, FriendContext context) {
     friends.putIfAbsent(friend, context);
@@ -51,5 +52,13 @@ class FriendManager {
       return;
     }
     addFriend(pseudo, trueFriend);
+  }
+
+  public void setNonceForFriend(String pseudo, long nonce) {
+    friendNonce.put(pseudo, nonce);
+  }
+
+  public long getNonceForFriend(String pseudo) {
+    return friendNonce.getOrDefault(pseudo, 0L);
   }
 }
