@@ -57,8 +57,8 @@ class FriendContext extends AbstractContext implements ClientContext {
           return;
         }
       }
-      case DmText dmText ->
-          client.display("[" + client.getFriend(friendAddress) + "] " + dmText.contenu());
+      case DmText dmText -> client.display(
+          "[" + client.getFriend(friendAddress) + "] says \"" + dmText.contenu() + "\" to you.");
     }
   }
 
