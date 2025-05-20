@@ -47,6 +47,10 @@ class WithServerContext extends AbstractContext implements ClientContext {
       case ServerForwardPublicMessage serverForwardPublicMessage -> System.out.println(
           "[" + serverForwardPublicMessage.pseudo() + "] " + serverForwardPublicMessage.contenu());
       case DmRequest dmRequest -> {
+        if (client.isAlreadyFriendWith(dmRequest.pseudo())) {
+          send(new DmResponse(dmRequest.pseudo(), DmResponse.Response.NO));
+          return;
+        }
         var nonce = ThreadLocalRandom.current().nextLong();
         client.addPendingDmRequest(dmRequest.pseudo());
         client.setNonceForFriend(dmRequest.pseudo(), nonce);

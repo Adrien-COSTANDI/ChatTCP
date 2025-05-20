@@ -119,6 +119,10 @@ public class Client {
     return friendManager.getAllFriends();
   }
 
+  public boolean isAlreadyFriendWith(String pseudo) {
+    return friendManager.isAlreadyFriendWith(pseudo);
+  }
+
   public void addPendingDmRequest(String pseudo) {
     pendingDmRequest.add(pseudo);
   }

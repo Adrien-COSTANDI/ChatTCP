@@ -65,4 +65,8 @@ class FriendManager {
   public Set<String> getAllFriends() {
     return friends.keySet();
   }
+
+  public boolean isAlreadyFriendWith(String pseudo) {
+    return friends.containsKey(pseudo);
+  }
 }
