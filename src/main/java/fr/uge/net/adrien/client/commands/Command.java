@@ -16,7 +16,7 @@ import java.util.Objects;
  * by the {@code COMMAND_PREFIX} constant. The prefix helps to distinguish
  * commands from other inputs.
  */
-public sealed interface Command permits Accept, Connect, Deny, Help, Requests {
+public sealed interface Command permits Accept, Connect, Deny, Friends, Help, Requests {
 
   char COMMAND_PREFIX = '/';
 
@@ -65,6 +65,7 @@ public sealed interface Command permits Accept, Connect, Deny, Help, Requests {
       case "deny", "d" -> new Deny(args);
       case "requests" -> new Requests(args);
       case "help", "h" -> new Help();
+      case "friends", "f" -> new Friends();
       default -> throw new IllegalArgumentException("Unknown command: " + command);
     };
   }

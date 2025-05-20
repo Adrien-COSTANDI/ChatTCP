@@ -115,6 +115,10 @@ public class Client {
     friendManager.addAlmostFriend(remoteAddress, friendContext);
   }
 
+  public Set<String> friends() {
+    return friendManager.getAllFriends();
+  }
+
   public void addPendingDmRequest(String pseudo) {
     pendingDmRequest.add(pseudo);
   }
@@ -197,6 +201,12 @@ public class Client {
       }
     } catch (IOException e) {
       logger.warning(e.getMessage());
+      if (key.attachment() instanceof FriendContext friendContext) {
+        SocketAddress friendAddress = friendContext.getFriendAddress();
+        System.out.println("friendAddress = " + friendAddress);
+        var friend = getFriend(friendAddress);
+        friendManager.removeFriend(friend);
+      }
       key.cancel();
       ((Context) key.attachment()).close();
     }

@@ -4,6 +4,7 @@ import fr.uge.net.adrien.packets.Packet;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.HashMap;
+import java.util.Set;
 
 class FriendManager {
 
@@ -31,11 +32,10 @@ class FriendManager {
 
   public void removeFriend(String friend) {
     var context = friends.remove(friend);
-    try {
-      friendsByAddr.remove(context.sc.getRemoteAddress());
-    } catch (IOException e) {
-      throw new AssertionError("Couldn't get remote address of " + friend);
+    if (context == null) {
+      return;
     }
+    friendsByAddr.remove(context.getFriendAddress());
   }
 
   public void sendTo(String friend, Packet packet) {
@@ -60,5 +60,9 @@ class FriendManager {
 
   public long getNonceForFriend(String pseudo) {
     return friendNonce.getOrDefault(pseudo, 0L);
+  }
+
+  public Set<String> getAllFriends() {
+    return friends.keySet();
   }
 }

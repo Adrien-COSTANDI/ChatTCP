@@ -25,8 +25,16 @@ class FriendContext extends AbstractContext implements ClientContext {
   public FriendContext(SelectionKey key, Client client) {
     super(key);
     this.client = client;
+    try {
+      this.friendAddress = sc.getRemoteAddress();
+    } catch (IOException e) {
+      logger.info("failed to get friend address");
+    }
   }
 
+  public SocketAddress getFriendAddress() {
+    return friendAddress;
+  }
 
   protected void processReceivedPacket(Packet packet) {
     logger.info("received " + packet);
