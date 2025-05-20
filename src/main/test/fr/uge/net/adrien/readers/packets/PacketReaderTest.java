@@ -1,9 +1,19 @@
 package fr.uge.net.adrien.readers.packets;
 
+import fr.uge.net.adrien.packets.ClientPublicMessage;
+import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
+import fr.uge.net.adrien.packets.DmConnect;
+import fr.uge.net.adrien.packets.DmFileHeader;
+import fr.uge.net.adrien.packets.DmRequest;
+import fr.uge.net.adrien.packets.DmResponse;
+import fr.uge.net.adrien.packets.DmText;
 import fr.uge.net.adrien.packets.Packet;
+import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
+import fr.uge.net.adrien.packets.common.Address;
 import fr.uge.net.adrien.readers.Reader;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,8 +27,18 @@ class PacketReaderTest {
 
   public static List<Packet> packets() {
     return List.of(new ConnectNoAuth("Bob"),
-        // new ConnectAuth("Bob", "password1234"), TODO
-        new ConnectServerResponse(ConnectServerResponse.StatusCode.OK));
+                   new ConnectAuth("Bob", "password1234"),
+                   new ConnectServerResponse(ConnectServerResponse.StatusCode.OK),
+                   new ClientPublicMessage("coucou"),
+                   new ServerForwardPublicMessage("Bob", "coucou"),
+                   new DmRequest("Alice"),
+                   new DmResponse("Bob",
+                                  DmResponse.Response.YES,
+                                  123L,
+                                  new Address(new InetSocketAddress("127.0.0.1", 12345))),
+                   new DmConnect("Bob", 123L),
+                   new DmText("coucou"),
+                   new DmFileHeader("toto.txt", 14));
   }
 
   @Test

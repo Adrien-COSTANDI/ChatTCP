@@ -11,8 +11,8 @@ import java.util.Optional;
  */
 public sealed interface Packet
     permits ConnectNoAuth, ConnectAuth, ConnectServerResponse, ClientPublicMessage,
-            ServerForwardPublicMessage, DmRequest, DmResponse, DmConnect,
-            DmText/*, DmFileHeader, DmFile*/ {
+            ServerForwardPublicMessage, DmRequest, DmResponse, DmConnect, DmText, DmFileHeader,
+            DmFileContent {
 
   Charset CHARSET = StandardCharsets.UTF_8;
 
@@ -36,9 +36,7 @@ public sealed interface Packet
     SERVER_FORWARD_PUBLIC_MESSAGE(5), DM_REQUEST(6),
     DM_RESPONSE(7),
     DM_CONNECT(8),
-    DM_TEXT(9),
-    /*DM_FILE_HEADER(10),
-    DM_FILE_CONTENT(11)*/;
+    DM_TEXT(9), DM_FILE_HEADER(10), DM_FILE_CONTENT(11);
 
     private final byte value;
 

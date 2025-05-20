@@ -5,6 +5,8 @@ import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
 import fr.uge.net.adrien.packets.DmConnect;
+import fr.uge.net.adrien.packets.DmFileContent;
+import fr.uge.net.adrien.packets.DmFileHeader;
 import fr.uge.net.adrien.packets.DmRequest;
 import fr.uge.net.adrien.packets.DmResponse;
 import fr.uge.net.adrien.packets.DmText;
@@ -27,7 +29,8 @@ class WithServerContext extends AbstractContext implements ClientContext {
   protected void processReceivedPacket(Packet packet) {
     System.out.println("received " + packet);
     switch (packet) {
-      case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _, DmConnect _, DmText _ -> {
+      case ConnectNoAuth _, ConnectAuth _, ClientPublicMessage _, DmConnect _, DmText _,
+           DmFileHeader _, DmFileContent _ -> {
       }
       case ConnectServerResponse connectServerResponse -> {
         switch (connectServerResponse.code()) {

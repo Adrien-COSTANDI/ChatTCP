@@ -6,6 +6,8 @@ import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
 import fr.uge.net.adrien.packets.DmConnect;
+import fr.uge.net.adrien.packets.DmFileContent;
+import fr.uge.net.adrien.packets.DmFileHeader;
 import fr.uge.net.adrien.packets.DmRequest;
 import fr.uge.net.adrien.packets.DmResponse;
 import fr.uge.net.adrien.packets.DmText;
@@ -53,7 +55,8 @@ class ServerContext implements Context {
     System.out.println("received " + packet);
 
     switch (packet) {
-      case ConnectServerResponse _, ServerForwardPublicMessage _, DmText _, DmConnect _ -> {
+      case ConnectServerResponse _, ServerForwardPublicMessage _, DmText _, DmConnect _,
+           DmFileHeader _, DmFileContent _ -> {
       }
       case ConnectNoAuth connectNoAuth -> {
         switch (server.connect(connectNoAuth.pseudo(), Optional.empty(), this)) {

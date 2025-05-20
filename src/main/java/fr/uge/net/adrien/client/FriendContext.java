@@ -5,6 +5,8 @@ import fr.uge.net.adrien.packets.ConnectAuth;
 import fr.uge.net.adrien.packets.ConnectNoAuth;
 import fr.uge.net.adrien.packets.ConnectServerResponse;
 import fr.uge.net.adrien.packets.DmConnect;
+import fr.uge.net.adrien.packets.DmFileContent;
+import fr.uge.net.adrien.packets.DmFileHeader;
 import fr.uge.net.adrien.packets.DmRequest;
 import fr.uge.net.adrien.packets.DmResponse;
 import fr.uge.net.adrien.packets.DmText;
@@ -12,6 +14,7 @@ import fr.uge.net.adrien.packets.Packet;
 import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Logger;
 
@@ -21,6 +24,12 @@ class FriendContext extends AbstractContext implements ClientContext {
   private final Client client;
   private SocketAddress friendAddress;
   private static final Logger logger = Logger.getLogger(FriendContext.class.getName());
+  private static final int FILE_CONTENT_MAX_SIZE = 8192;
+
+  private final ByteBuffer fileBufferIn =
+      ByteBuffer.allocate(Byte.BYTES + Short.BYTES + FILE_CONTENT_MAX_SIZE);
+  private final ByteBuffer fileBufferOut =
+      ByteBuffer.allocate(Byte.BYTES + Short.BYTES + FILE_CONTENT_MAX_SIZE);
 
   public FriendContext(SelectionKey key, Client client) {
     super(key);
@@ -59,6 +68,12 @@ class FriendContext extends AbstractContext implements ClientContext {
       }
       case DmText dmText -> client.display(
           "[" + client.getFriend(friendAddress) + "] says \"" + dmText.contenu() + "\" to you.");
+      case DmFileHeader DmFile -> {
+
+      }
+      case DmFileContent dmFileContent -> {
+
+      }
     }
   }
 
