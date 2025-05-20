@@ -87,8 +87,10 @@ public class Client {
         logger.warning("Console thread is dead");
       } catch (ClosedSelectorException e) {
         logger.warning("Selector is closed");
+        System.exit(1);
       } catch (UncheckedIOException e) {
         logger.warning(e.getCause().getMessage());
+        System.exit(1);
       }
     }
   }
@@ -171,6 +173,11 @@ public class Client {
       if (key.isValid() && key.isAcceptable()) {
         doAccept(); // only serverSocketChannel
       }
+    } catch (IOException ioe) {
+      // lambda call in select requires to tunnel IOException
+      throw new UncheckedIOException(ioe);
+    }
+    try {
       if (key.isValid() && key.isConnectable()) {
         ((ClientContext) key.attachment()).doConnect();
       }
@@ -180,9 +187,10 @@ public class Client {
       if (key.isValid() && key.isReadable()) {
         ((Context) key.attachment()).doRead();
       }
-    } catch (IOException ioe) {
-      // lambda call in select requires to tunnel IOException
-      throw new UncheckedIOException(ioe);
+    } catch (IOException e) {
+      logger.warning(e.getMessage());
+      key.cancel();
+      ((Context) key.attachment()).close();
     }
   }
 

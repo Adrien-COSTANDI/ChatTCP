@@ -37,7 +37,7 @@ class FriendContext extends AbstractContext implements ClientContext {
       case DmConnect dmConnect -> {
         if (dmConnect.nonce() != client.getNonceForFriend(dmConnect.pseudo())) {
           logger.info("received invalid nonce from " + dmConnect.pseudo());
-          silentlyClose();
+          close();
           return;
         }
         try {
@@ -45,7 +45,7 @@ class FriendContext extends AbstractContext implements ClientContext {
           client.sendToFriend(dmConnect.pseudo(), new DmText("hi " + dmConnect.pseudo() + " !"));
         } catch (IOException e) {
           client.display("failed to add friend " + dmConnect.pseudo());
-          silentlyClose();
+          close();
           return;
         }
       }

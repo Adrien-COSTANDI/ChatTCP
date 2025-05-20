@@ -61,14 +61,15 @@ abstract class AbstractContext implements Context {
     }
 
     if (interestOps == 0) {
-      silentlyClose();
+      close();
       return;
     }
 
     key.interestOps(interestOps);
   }
 
-  protected void silentlyClose() {
+  @Override
+  public void close() {
     try {
       sc.close();
       closed = true;
@@ -87,7 +88,7 @@ abstract class AbstractContext implements Context {
     }
 
     if (status == Reader.ProcessStatus.ERROR) {
-      silentlyClose();
+      close();
     }
   }
 

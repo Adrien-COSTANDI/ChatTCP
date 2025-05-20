@@ -137,7 +137,7 @@ class ServerContext implements Context {
     }
     if (status == Reader.ProcessStatus.ERROR) {
       System.out.println("bad packet read, bye bye");
-      silentlyClose();
+      close();
     }
   }
 
@@ -168,7 +168,7 @@ class ServerContext implements Context {
     }
 
     if (ops == 0) {
-      silentlyClose();
+      close();
       return;
     }
 
@@ -176,7 +176,8 @@ class ServerContext implements Context {
     key.selector().wakeup();
   }
 
-  private void silentlyClose() {
+  @Override
+  public void close() {
     try {
       sc.close();
     } catch (IOException e) {

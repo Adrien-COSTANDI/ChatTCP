@@ -34,12 +34,12 @@ class WithServerContext extends AbstractContext implements ClientContext {
           case OK -> System.out.println("connected");
           case PSEUDO_ALREADY_TAKEN -> {
             System.out.println("pseudo already taken");
-            silentlyClose();
+            close();
             client.shutdown();
           }
           case INVALID_PSEUDO_OR_PASSWORD -> {
             System.out.println("invalid pseudo or password");
-            silentlyClose();
+            close();
             client.shutdown();
           }
         }
