@@ -50,10 +50,9 @@ class WithServerContext extends AbstractContext implements ClientContext {
         var nonce = ThreadLocalRandom.current().nextLong();
         client.addPendingDmRequest(dmRequest.pseudo());
         client.setNonceForFriend(dmRequest.pseudo(), nonce);
-        client.sendToServer(new DmResponse(dmRequest.pseudo(),
-                                           DmResponse.Response.YES,
-                                           nonce,
-                                           client.address()));
+        client.display(
+            dmRequest.pseudo() + " wants to connect. Use \"/accept " + dmRequest.pseudo() +
+            "\" to accept or \"/deny \"" + dmRequest.pseudo() + "\" to refuse.");
       }
       case DmResponse dmResponse -> {
         switch (dmResponse.ok()) {

@@ -119,6 +119,14 @@ public class Client {
     pendingDmRequest.add(pseudo);
   }
 
+  public boolean hasPendingRequest(String pseudo) {
+    return pendingDmRequest.contains(pseudo);
+  }
+
+  public void pendingRequestDone(String pseudo) {
+    pendingDmRequest.remove(pseudo);
+  }
+
   void confirmFriendship(SocketAddress address, String pseudo) {
     friendManager.confirmFriendShip(address, pseudo);
   }
