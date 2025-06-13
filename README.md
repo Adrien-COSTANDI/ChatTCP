@@ -28,3 +28,12 @@ Here is the list of commands a user can use :
 - `/requests (sent/received)` shows every pending request for private conversations the user has sent or received
 - `/help` (alias `/h`) shows help for every command
 
+# TODO
+
+- `/friends` pour voir avec qui je suis actuellement connecté
+- `/tell user message` pour mp
+- `/share user path/to/file` pour mp fichier
+- rien pour message public
+
+Nom en [MAJUSCULE] si reçoit message public.\
+Nom en (minuscule) si reçoit message privé.

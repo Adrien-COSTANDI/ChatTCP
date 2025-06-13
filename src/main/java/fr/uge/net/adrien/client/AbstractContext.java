@@ -13,7 +13,7 @@ import java.util.Objects;
 
 abstract class AbstractContext implements Context {
 
-  protected static final int BUFFER_SIZE = 8192;
+  protected static final int BUFFER_SIZE = 32000;
 
   protected final SelectionKey key;
   protected final SocketChannel sc;

@@ -12,10 +12,15 @@ import fr.uge.net.adrien.packets.DmResponse;
 import fr.uge.net.adrien.packets.DmText;
 import fr.uge.net.adrien.packets.Packet;
 import fr.uge.net.adrien.packets.ServerForwardPublicMessage;
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.logging.Logger;
 
 
@@ -24,16 +29,17 @@ class FriendContext extends AbstractContext implements ClientContext {
   private final Client client;
   private SocketAddress friendAddress;
   private static final Logger logger = Logger.getLogger(FriendContext.class.getName());
-  private static final int FILE_CONTENT_MAX_SIZE = 8192;
 
-  private final ByteBuffer fileBufferIn =
-      ByteBuffer.allocate(Byte.BYTES + Short.BYTES + FILE_CONTENT_MAX_SIZE);
-  private final ByteBuffer fileBufferOut =
-      ByteBuffer.allocate(Byte.BYTES + Short.BYTES + FILE_CONTENT_MAX_SIZE);
+  private OutputStream receivedFile;
+  private int remainingFileSize = -1;
+  private String expectedFileName = null;
 
-  public FriendContext(SelectionKey key, Client client) {
+  private SeekableByteChannel sentFile;
+
+  public FriendContext(SelectionKey key, Client client) throws IOException {
     super(key);
     this.client = client;
+    receivedFile = Files.newOutputStream(client.getPathToFolder());
     try {
       this.friendAddress = sc.getRemoteAddress();
     } catch (IOException e) {
@@ -68,12 +74,72 @@ class FriendContext extends AbstractContext implements ClientContext {
       }
       case DmText dmText -> client.display(
           "[" + client.getFriend(friendAddress) + "] says \"" + dmText.contenu() + "\" to you.");
-      case DmFileHeader DmFile -> {
-
+      case DmFileHeader dmFileHeader -> {
+        if (remainingFileSize != -1 || expectedFileName != null) {
+          logger.warning("received unexpected file header, resetting");
+          try {
+            receivedFile.close();
+            Files.deleteIfExists(client.getPathToFolder().resolve(expectedFileName));
+          } catch (IOException e) {
+            logger.warning("failed to delete file " + expectedFileName + ":\n" + e);
+          }
+        }
+        remainingFileSize = dmFileHeader.size();
+        expectedFileName = dmFileHeader.fileName();
+        try {
+          receivedFile = Files.newOutputStream(client.getPathToFolder().resolve(expectedFileName));
+        } catch (IOException e) {
+          logger.warning("failed to create file " + expectedFileName + ":\n" + e);
+          silentlyClose(receivedFile);
+        }
       }
       case DmFileContent dmFileContent -> {
+        /*
+         dmFileContent.contenu() écrire dans le flux vers le fichier
+         if fichier.finished throw ISE
+         else write into fichier and close if necessary
 
+         outputStream.write(dmFileContent.contenu());
+        */
+
+        try {
+          receivedFile.write(dmFileContent.contenu());
+        } catch (IOException e) {
+          logger.warning("failed to write to file " + expectedFileName + ":\n" + e);
+          silentlyClose(receivedFile);
+          remainingFileSize = -1;
+          expectedFileName = null;
+          return;
+        }
+        remainingFileSize -= dmFileContent.contenu().length;
+        if (remainingFileSize < 0) {
+          logger.warning("received more bytes than expected");
+        }
+
+        if (remainingFileSize <= 0) {
+          silentlyClose(receivedFile);
+          client.display("File " + expectedFileName + " received");
+          remainingFileSize = -1;
+          expectedFileName = null;
+        }
       }
+    }
+  }
+
+
+  public void setFileToSend(Path file) {
+    try {
+      sentFile = Files.newByteChannel(file);
+    } catch (IOException e) {
+      silentlyClose(sentFile);
+    }
+  }
+
+  private static void silentlyClose(Closeable c) {
+    try {
+      c.close();
+    } catch (IOException e) {
+      // ignore
     }
   }
 
@@ -88,5 +154,28 @@ class FriendContext extends AbstractContext implements ClientContext {
     // add friend here, but I don't have the name
     client.addAlmostFriend(friendAddress, this);
     send(new DmConnect(client.pseudo(), client.getNonceForFriend(client.getFriend(friendAddress))));
+  }
+
+  @Override
+  protected void processOut() {
+    while (!queue.isEmpty() && bufferOut.remaining() >= queue.peek().length()) {
+      var packetBuffer = queue.poll().toByteBuffer().flip();
+      bufferOut.put(packetBuffer);
+    }
+    var remainingBufferOut = bufferOut.remaining();
+    try {
+      var fileBuffer = ByteBuffer.allocate(Math.min(remainingBufferOut, 8192) - 1 - 2);
+      var bytesRead = sentFile.read(fileBuffer);
+      if (bytesRead == -1) {
+        sentFile.close();
+      }
+    } catch (IOException e) {
+      try {
+        logger.warning("failed to send file " + expectedFileName + ":\n" + e);
+        sentFile.close();
+      } catch (IOException ex) {
+        // ignore
+      }
+    }
   }
 }

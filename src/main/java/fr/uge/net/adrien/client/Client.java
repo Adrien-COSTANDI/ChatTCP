@@ -14,6 +14,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Optional;
@@ -101,6 +102,13 @@ public class Client {
 
   public void sendToFriend(String pseudo, Packet packet) {
     friendManager.sendTo(pseudo, packet);
+  }
+
+  public void sendFileToFriend(String pseudo, Path file) {
+    if (Files.isDirectory(file)) {
+      logger.warning("Command Share does not support directories");
+    }
+    friendManager.sendFileTo(pseudo, file);
   }
 
   public void setNonceForFriend(String pseudo, long nonce) {
@@ -222,6 +230,10 @@ public class Client {
 
   public Optional<String> password() {
     return Optional.ofNullable(password);
+  }
+
+  Path getPathToFolder() {
+    return pathToFolder;
   }
 
   public Address address() {

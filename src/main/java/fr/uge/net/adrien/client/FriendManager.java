@@ -3,6 +3,8 @@ package fr.uge.net.adrien.client;
 import fr.uge.net.adrien.packets.Packet;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -44,6 +46,20 @@ class FriendManager {
       throw new IllegalArgumentException("Friend not found: " + friend);
     }
     context.send(packet);
+  }
+
+  public void sendFileTo(String friend, Path file) {
+    try {
+      var size = Files.size(file);
+      System.out.println("size = " + size);
+      var context = friends.get(friend);
+      if (context == null) {
+        throw new IllegalArgumentException("Friend not found: " + friend);
+      }
+      context.setFileToSend(file);
+    } catch (IOException e) {
+      System.err.println("Could not get file size");
+    }
   }
 
   public void confirmFriendShip(SocketAddress address, String pseudo) {
